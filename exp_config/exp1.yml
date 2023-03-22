@@ -1,0 +1,13 @@
+model:
+  name: HELLO
+  loss_config:
+    type: ""
+train_config:
+  data_type:
+    - radar
+    - rain
+  data_loader:
+    start_time: 2021_06_04 
+    end_time: 2021_12_31
+    batch_size: 32
+    epochs: 1000

@@ -1,0 +1,5 @@
+pytorch-lightning # v2.0.0
+pytorch-msssim
+ipykernel
+netcdf4
+metpy
