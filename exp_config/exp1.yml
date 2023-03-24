@@ -1,13 +1,28 @@
+# For non-given arguments, just leave it empty
 model:
   name: HELLO
   loss_config:
-    type: ""
+    type:
 train_config:
-  data_type:
-    - radar
-    - rain
+  data_type_info:
+    rain:
+      path: /work/dong1128/database
+      filename:
+      normalize_factor:
+    radar:
+      path: /work/dong1128/database/radar_2d_cropped
+      filename: 20190101_0000.nc
+      normalize_factor:
   data_loader:
-    start_time: 2021_06_04 
-    end_time: 2021_12_31
+    # all the keys are listed in the constructor of PLDataLoader
+    train_start: 2021_06_04 
+    train_end: 2021_12_31
+    val_start: 2022_01_01
+    val_end: 2022_06_01
     batch_size: 32
-    epochs: 1000
+    num_workers: 4
+    input_len: 6
+    output_len: 3
+    output_interval: 6
+    img_size: (120, 120)
+    sampling_rate: 6

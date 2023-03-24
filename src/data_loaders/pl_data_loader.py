@@ -1,9 +1,9 @@
 from datetime import datetime
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
-from typing import List, Tuple
+from typing import Tuple, Dict
 
-from src.data_loader.basic_data_loader import BasicDataLoader
+from src.data_loaders.data_loader_integration import DataLoaderIntegration
 
 
 class PLDataLoader(LightningDataModule):
@@ -13,10 +13,10 @@ class PLDataLoader(LightningDataModule):
         train_end: datetime,
         val_start: datetime,
         val_end: datetime,
-        data_type: List[str],
+        data_type_info: Dict[str, Dict],
         input_len: int,
         output_len: int,
-        output_interval: int = 6,
+        output_interval: int,
         threshold: float = None,
         hourly_data: bool = False,
         img_size: Tuple[int] = None,
@@ -30,7 +30,7 @@ class PLDataLoader(LightningDataModule):
         self._train_end = train_end
         self._val_start = val_start
         self._val_end = val_end
-        self._dtype = data_type
+        self._dtype_info = data_type_info
         self._ilen = input_len
         self._olen = output_len
         self._output_interval = output_interval
@@ -45,30 +45,30 @@ class PLDataLoader(LightningDataModule):
         self._setup()
 
     def _setup(self):
-        self._train_dataset = BasicDataLoader(
+        self._train_dataset = DataLoaderIntegration(
             self._train_start,
             self._train_end,
             self._ilen,
             self._olen,
             output_interval = self._output_interval,
             threshold = self._threshold,
-            data_type = self._dtype,
+            data_type_info = self._dtype_info,
             hourly_data = self._hourly_data,
-            img_size = self._img_sz,
+            img_size = self._img_size,
             sampling_rate = self._sampling_rate,
             is_train = True,
         )
 
-        self._val_dataset = BasicDataLoader(
+        self._val_dataset = DataLoaderIntegration(
             self._val_start,
             self._val_end,
             self._ilen,
             self._olen,
             output_interval = self._output_interval,
             threshold = self._threshold,
-            data_type = self._dtype,
+            data_type_info = self._dtype_info,
             hourly_data = self._hourly_data,
-            img_size = self._img_sz,
+            img_size = self._img_size,
             sampling_rate = self._sampling_rate,
             is_valid = True,
         )

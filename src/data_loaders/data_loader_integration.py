@@ -1,21 +1,33 @@
-import os
-import numpy as np
-import netCDF4 as nc
-import metpy.calc as mpcalc
-from metpy.units import units
 from torch.utils.data import Dataset
-from datetime import datetime, timedelta
-from typing import List
+from datetime import datetime
+from typing import Dict, Tuple, List
+from enum import Enum
 
-from core.radar_data_aggregator import CompressedAggregatedRadarData
-from core.compressed_rain_data import CompressedRainData
-from core.constants import (RADAR_Q95, RAIN_Q95, TIME_GRANULARITY_MIN,
-                            TERRAIN_FILE, ERA_DIR)
-from core.dataset import load_data
-from core.enum import DataType
-from DLRA_prep.utils_data_collect.terrain_slope import load_shp, mapping
+from src.data_loaders.rain_loader import RainLoader
+from src.data_loaders.radar_loader import RadarLoader
 
-class BasicDataLoader(Dataset):
+# from core.radar_data_aggregator import CompressedAggregatedRadarData
+# from core.compressed_rain_data import CompressedRainData
+# from core.constants import (RADAR_Q95, RAIN_Q95, TIME_GRANULARITY_MIN,
+#                             TERRAIN_FILE, ERA_DIR)
+# from core.dataset import load_data
+# from core.enum import DataType
+# from DLRA_prep.utils_data_collect.terrain_slope import load_shp, mapping
+class LoaderMapping(Enum):
+    rain = RainLoader
+    radar = RadarLoader
+
+    @classmethod
+    def get_all_loaders(cls, data_infos: Dict[str, Dict]):
+        all_loaders = []
+        for key, value in data_infos.items():
+            all_loaders.append(cls.get_loader(key, value))
+        return all_loaders
+
+    def get_loader(key, value):
+        return LoaderMapping[key].value(**value)
+
+class DataLoaderIntegration(Dataset):
     def __init__(
         self,
         start_time: datetime,
@@ -24,10 +36,10 @@ class BasicDataLoader(Dataset):
         output_len: int,
         output_interval: int,
         threshold: float,
-        data_type: List[str],
-        hourly_data=False,
-        img_size=None,
-        sampling_rate=None,
+        data_type_info: Dict[str, Dict],
+        hourly_data: bool,
+        img_size: Tuple[int],
+        sampling_rate: int,
         is_train: bool = False,
         is_valid: bool = False,
         is_test: bool = False,
@@ -39,58 +51,64 @@ class BasicDataLoader(Dataset):
         self._olen = output_len
         self._output_interval = output_interval
         self._threshold = threshold
-        self._dtype = data_type
+        self._dtype_info = data_type_info
         self._hourly_data = hourly_data
         self._img_size = img_size
         self._sampling_rate = sampling_rate
         
+        # set default sampling rate
         if self._sampling_rate is None:
             self._sampling_rate = self._ilen
 
-        self._index_map = []
-        # There is an issue in python 3.6.10 with multiprocessing. workers should therefore be set to 0.
-        self._dataset = load_data(
-            self._s,
-            self._e,
-            is_validation=is_validation,
-            is_test=is_test,
-            is_train=is_train,
-            workers=0,
-        )
-        self._ccrop = CenterCropNumpy(self._img_size)
-        self._time = list(self._dataset['radar'].keys())
-        self._raw_altitude = Altitude_data(['高程', '坡度', '坡向'])
-        self._slope_x, self._slope_y = cal_slope(self._raw_altitude[0])
-        self._blur_altitude = blurness(self._raw_altitude[0], k_size=5)
-        # whether to also give last 5 hours hour averaged rain rate
-        self._hourly_data = hourly_data
-        self._hetero_data = hetero_data
-        self._set_index_map()
+        # set all loaders
+        self._all_loaders = LoaderMapping.get_all_loaders(self._dtype_info)
 
-        DataType.print(self._dtype, prefix=self.__class__.__name__)
-        print(f'[{self.__class__.__name__}] {self._s}<->{self._e} ILen:{self._ilen} TLen:{self._tlen} '
-              f'Toff:{self._toffset} TAvgLen:{self._tavg_len} Residual:{int(self._residual)} Hrly:{int(hourly_data)} '
-              f'Sampl:{self._sampling_rate} RandStd:{self._random_std} Th:{self._threshold}')
+        
 
-    def _set_index_map(self):
-        raw_idx = 0
-        skip_counter = 0
-        target_offset = self._ilen + self._toffset + self._tavg_len * self._tlen
-        while raw_idx < len(self._time):
-            if raw_idx + target_offset >= len(self._time):
-                break
+        # self._index_map = []
+        # # There is an issue in python 3.6.10 with multiprocessing. workers should therefore be set to 0.
+        # self._dataset = load_data(
+        #     self._s,
+        #     self._e,
+        #     is_validation=is_validation,
+        #     is_test=is_test,
+        #     is_train=is_train,
+        #     workers=0,
+        # )
+        # self._ccrop = CenterCropNumpy(self._img_size)
+        # self._time = list(self._dataset['radar'].keys())
+        # self._raw_altitude = Altitude_data(['高程', '坡度', '坡向'])
+        # self._slope_x, self._slope_y = cal_slope(self._raw_altitude[0])
+        # self._blur_altitude = blurness(self._raw_altitude[0], k_size=5)
+        # # whether to also give last 5 hours hour averaged rain rate
+        # self._hourly_data = hourly_data
+        # self._hetero_data = hetero_data
+        # self._set_index_map()
 
-            if self._time[raw_idx + target_offset] - self._time[raw_idx] != timedelta(seconds=TIME_GRANULARITY_MIN *
-                                                                                     target_offset * 60):
-                skip_counter += 1
-            else:
-                self._index_map.append(raw_idx)
+    #     DataType.print(self._dtype, prefix=self.__class__.__name__)
+    #     print(f'[{self.__class__.__name__}] {self._s}<->{self._e} ILen:{self._ilen} TLen:{self._tlen} '
+    #           f'Toff:{self._toffset} TAvgLen:{self._tavg_len} Residual:{int(self._residual)} Hrly:{int(hourly_data)} '
+    #           f'Sampl:{self._sampling_rate} RandStd:{self._random_std} Th:{self._threshold}')
 
-            raw_idx += 1
+    # def _set_index_map(self):
+    #     raw_idx = 0
+    #     skip_counter = 0
+    #     target_offset = self._ilen + self._toffset + self._tavg_len * self._tlen
+    #     while raw_idx < len(self._time):
+    #         if raw_idx + target_offset >= len(self._time):
+    #             break
+
+    #         if self._time[raw_idx + target_offset] - self._time[raw_idx] != timedelta(seconds=TIME_GRANULARITY_MIN *
+    #                                                                                  target_offset * 60):
+    #             skip_counter += 1
+    #         else:
+    #             self._index_map.append(raw_idx)
+
+    #         raw_idx += 1
             
-        print(f'[{self.__class__.__name__}] Size:{len(self._index_map)} Skipped:{skip_counter}')
-    
-    def six_multiplication(self, input_data, factor=2000):
+    #     print(f'[{self.__class__.__name__}] Size:{len(self._index_map)} Skipped:{skip_counter}')
+
+    """def six_multiplication(self, input_data, factor=2000):
         # add a dim of 6 at the very beginning
         output_map = [input_data for _ in range(self._ilen)]
         output_map = np.stack(output_map, axis=0)/factor # size [6, 120, 120]
@@ -158,9 +176,7 @@ class BasicDataLoader(Dataset):
         return self._get_rain_data_from_range(self._input_range(index))
 
     def _get_most_recent_target(self, index, tavg_len=None):
-        """
-        Returns the averge rainfall which has happened in last self._tlen*10 minutes.
-        """
+        # Returns the averge rainfall which has happened in last self._tlen*10 minutes.
         if tavg_len is None:
             tavg_len = self._tavg_len
 
@@ -482,3 +498,4 @@ def moving_average(a, n=6):
     output[n:] = output[n:] / n
     output[:n] = output[:n] / np.arange(1, n + 1).reshape(-1, 1, 1)
     return output
+"""

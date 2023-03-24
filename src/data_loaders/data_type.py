@@ -1,36 +1,27 @@
-class Enum:
-    @classmethod
-    def name(cls, enum_type):
-        for key, value in cls.__dict__.items():
-            if enum_type == value:
-                return key
+from enum import Enum, auto
+from typing import List
+
+class DataType(Enum):
+    RAIN = auto()
+    RADAR = auto()
+    WIND = auto()
+    MONTH = auto()
+    ELEVATION = auto()
+    THETAE = auto()
+    LIFTING = auto()
 
     @classmethod
-    def from_name(cls, enum_type_str):
-        for key, value in cls.__dict__.items():
-            if key == enum_type_str:
-                return value
-        assert f'{cls.__name__}:{enum_type_str} doesnot exist.'
-
-class DataType:
-    # NOTE: Every value has to be a power of 2.
-    NONEATALL = 0
-    RAIN = 1
-    WTDOT = 2
-    THETAE = 4
-    MONTH = 8
-    RADAR = 16
-    ELEVATION = 32
-    WIND = 64
-
-    RAIN_RADAR = 17
-    RAIN_RADAR_WTDOT = 19
-    RAIN_RADAR_THETAE = 21
-    RAIN_RADAR_MONTH = 25
-    RAIN_RADAR_ELEVATION = 49
-    RAIN_RADAR_WIND = 81
+    def data_type_mapping(cls, dtypes: List[str]):
+        container = []
+        for dtype in dtypes:
+            if dtype == 'rain':
+                container.append(cls.RAIN)
+            elif  dtype == 'radar':
+                container.append(cls.RADAR)
+        return container
 
 
+    """"
     @classmethod
     def all_data(cls):
         output = 0
@@ -76,3 +67,17 @@ class DataType:
                 continue
             if (dtype & value) == value:
                 print(f'[{prefix} Dtype]', key)
+
+    @classmethod
+    def name(cls, enum_type):
+        for key, value in cls.__dict__.items():
+            if enum_type == value:
+                return key
+
+    @classmethod
+    def from_name(cls, enum_type_str):
+        for key, value in cls.__dict__.items():
+            if key == enum_type_str:
+                return value
+        assert f'{cls.__name__}:{enum_type_str} doesnot exist.'
+    """
