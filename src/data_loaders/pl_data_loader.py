@@ -73,11 +73,11 @@ class PLDataLoader(LightningDataModule):
         print("===start cross comparison of time lists===")
 
         ## expecting only one loader selected
-        time_list = list(
+        time_list = next(
             filter(lambda x: x.is_oup, self._all_loaders)
-        )[0].set_time_list_as_target(self._olen, self._output_interval)
+        ).set_time_list_as_target(self._olen, self._output_interval)
 
-        ## handle other input data
+        ## handle other input loaders
         reduce(lambda x: x.is_inp, self._all_loaders)
 
 
