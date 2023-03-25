@@ -6,7 +6,9 @@ config_file = './exp_config/exp1.yml'
 with open(config_file, "r") as content:
     config = yaml.safe_load(content)
 
-my_loader = PLDataLoader(data_type_info=config['train_config']['data_type_info'], **config['train_config']['data_loader'])
+my_loader = PLDataLoader(
+    data_meta_info=config['train_config']['data_meta_info'], **config['train_config']['data_loader_params']
+)
 
 # import argparse
 # import os, sys

@@ -4,7 +4,7 @@ class RadarLoader(BasicLoader):
     def __init__(self, **kwarg):
         super().__init__(**kwarg)
 
-    def get_time_from_filename(self):
+    def parse_filename_to_datetime(self):
         return
     
     def load_data(self):

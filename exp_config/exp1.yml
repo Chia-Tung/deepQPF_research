@@ -4,16 +4,20 @@ model:
   loss_config:
     type:
 train_config:
-  data_type_info:
+  data_meta_info:
     rain:
-      path: /work/dong1128/database
-      filename:
+      path: "/work/dong1128/database/rain_rate_ten_min"
+      formatter: "%Y%m%d_%H%M.nc"
       normalize_factor:
+      is_inp: True
+      is_oup: True
     radar:
-      path: /work/dong1128/database/radar_2d_cropped
-      filename: 20190101_0000.nc
+      path: "/work/dong1128/database/radar_2d_cropped"
+      formatter: "%Y%m%d_%H%M.nc"
       normalize_factor:
-  data_loader:
+      is_inp: True
+      is_oup: False
+  data_loader_params:
     # all the keys are listed in the constructor of PLDataLoader
     train_start: 2021_06_04 
     train_end: 2021_12_31

@@ -3,9 +3,6 @@ from datetime import datetime
 from typing import Dict, Tuple, List
 from enum import Enum
 
-from src.data_loaders.rain_loader import RainLoader
-from src.data_loaders.radar_loader import RadarLoader
-
 # from core.radar_data_aggregator import CompressedAggregatedRadarData
 # from core.compressed_rain_data import CompressedRainData
 # from core.constants import (RADAR_Q95, RAIN_Q95, TIME_GRANULARITY_MIN,
@@ -13,20 +10,6 @@ from src.data_loaders.radar_loader import RadarLoader
 # from core.dataset import load_data
 # from core.enum import DataType
 # from DLRA_prep.utils_data_collect.terrain_slope import load_shp, mapping
-class LoaderMapping(Enum):
-    rain = RainLoader
-    radar = RadarLoader
-
-    @classmethod
-    def get_all_loaders(cls, data_infos: Dict[str, Dict]):
-        all_loaders = []
-        for key, value in data_infos.items():
-            all_loaders.append(cls.get_loader(key, value))
-        return all_loaders
-
-    def get_loader(key, value):
-        return LoaderMapping[key].value(**value)
-
 class DataLoaderIntegration(Dataset):
     def __init__(
         self,
@@ -59,11 +42,6 @@ class DataLoaderIntegration(Dataset):
         # set default sampling rate
         if self._sampling_rate is None:
             self._sampling_rate = self._ilen
-
-        # set all loaders
-        self._all_loaders = LoaderMapping.get_all_loaders(self._dtype_info)
-
-        
 
         # self._index_map = []
         # # There is an issue in python 3.6.10 with multiprocessing. workers should therefore be set to 0.
