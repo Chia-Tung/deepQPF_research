@@ -7,6 +7,16 @@ from typing import List
 from src.time_util import TimeUtil
 
 class BasicLoader(metaclass=abc.ABCMeta):
+    # static variable
+    _instance = None
+    init_flag = False
+    
+    def __new__(cls, *args, **kwargs): 
+        if cls._instance is None: 
+            # assign memory address
+            cls._instance = super().__new__(cls) 
+        return cls._instance 
+    
     def __init__(
         self, 
         path: str, 
@@ -15,6 +25,10 @@ class BasicLoader(metaclass=abc.ABCMeta):
         is_inp: bool = False, 
         is_oup: bool = False
     ):
+        if self.__class__.init_flag:
+           print(f"Call {self.__class__.__name__} Singleton Object.")
+           return
+        
         if path == None  or len(path) == 0:
             raise RuntimeError(self.__class__.__name__, " data path must be given.")
         
@@ -28,6 +42,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
         self.__IS_OUP = is_oup
 
         self.__all_files, self.__time_list = self.list_all_time()
+        self.__class__.init_flag = True
         print(self.__class__.__name__, " instantiate.")
     
     @abc.abstractmethod
@@ -38,9 +53,9 @@ class BasicLoader(metaclass=abc.ABCMeta):
     def cross_check_input_time(self, target_time_list: List[datetime]):
         return NotImplemented
     
-    # @property
-    # def is_inp(self):
-    #     return self._is_inp
+    @property
+    def is_inp(self):
+        return self.__IS_INP
     
     @property
     def is_oup(self):

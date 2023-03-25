@@ -14,7 +14,7 @@ train_config:
     radar:
       path: "/work/dong1128/database/radar_2d_cropped"
       formatter: "%Y%m%d_%H%M.nc"
-      normalize_factor:
+      normalize_factor: 30
       is_inp: True
       is_oup: False
   data_loader_params:

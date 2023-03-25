@@ -3,12 +3,14 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from typing import Tuple, Dict
 from enum import Enum
+from functools import reduce
 
 from src.data_loaders.rain_loader import RainLoader
 from src.data_loaders.radar_loader import RadarLoader
 from src.data_loaders.data_loader_integration import DataLoaderIntegration
 
 class LoaderMapping(Enum):
+    """ Genrate Multiple Customized Data Loaders in Singleton Pattern """
     rain = RainLoader
     radar = RadarLoader
 
@@ -44,7 +46,6 @@ class PLDataLoader(LightningDataModule):
         batch_size: int = 32,
         num_workers: int = 4,
     ):
-
         super().__init__()
         self._train_start = train_start
         self._train_end = train_end
@@ -71,10 +72,15 @@ class PLDataLoader(LightningDataModule):
         # cross comparison on TIME
         print("===start cross comparison of time lists===")
 
-        # expecting only one loader selected
+        ## expecting only one loader selected
         time_list = list(
             filter(lambda x: x.is_oup, self._all_loaders)
         )[0].set_time_list_as_target(self._olen, self._output_interval)
+
+        ## handle other input data
+        reduce(lambda x: x.is_inp, self._all_loaders)
+
+
 
 
         # self._train_dataset = DataLoaderIntegration(
