@@ -50,7 +50,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
         return NotImplemented
     
     @abc.abstractmethod
-    def cross_check_input_time(self, target_time_list: List[datetime]):
+    def cross_check_start_time(self, original_time_list: List[datetime], ilen: int):
         return NotImplemented
     
     @property
@@ -60,10 +60,10 @@ class BasicLoader(metaclass=abc.ABCMeta):
     @property
     def is_oup(self):
         return self.__IS_OUP
- 
-    # @is_oup.setter
-    # def is_oup(self, value: bool):
-    #     self._is_oup = value
+    
+    @property
+    def time_list(self):
+        return self.__time_list
     
     def list_all_time(self):
         # set path -> type:pathlib.Path
@@ -76,20 +76,23 @@ class BasicLoader(metaclass=abc.ABCMeta):
 
         return all_paths, all_time
     
-    def set_time_list_as_target(self, output_len: int, output_interval: int) -> List[datetime]:
+    def set_start_time_list(self, output_len: int, output_interval: int) -> List[datetime]:
+        """
+        This function stores the "start time" defined in Meteorology. Note that most of the 
+        parameters are recording the "past data".
+        """
         time_map = []
         raw_idx = 0
-        target_offset = output_len * output_interval
+        target_offset = output_len * output_interval - 1 # 17 intervals
+        granularity = 60 / output_interval # 10 min
         while raw_idx < len(self.__time_list):
             if raw_idx + target_offset >= len(self.__time_list):
                 break
-            
-            # 60/output_interval: 
-            #   Number of minutes between each interval. 
-            #   Also representing the granularity of output data
-            if not (self.__time_list[raw_idx + target_offset] - self.__time_list[raw_idx] 
-                != timedelta(seconds = target_offset * (60/output_interval) * 60)):
-                time_map.append(self.__time_list[raw_idx])
+
+            start_time = self.__time_list[raw_idx] - timedelta(minutes=granularity)
+            if (self.__time_list[raw_idx + target_offset] - self.__time_list[raw_idx] 
+                == timedelta(minutes = target_offset * granularity)):
+                time_map.append(start_time)
 
             raw_idx += 1
         return time_map
