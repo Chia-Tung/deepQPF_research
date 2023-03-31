@@ -26,5 +26,6 @@ class RadarLoader(BasicLoader):
         
         return list(set(output_time_list).intersection(set(original_time_list)))
     
-    def load_data_from_datetime(self):
-        pass
+    def load_data_from_datetime(self, dt: datetime):
+        file_path = self._BasicLoader__all_files[self.time_list.index(dt)]
+        return self.read(file_path)

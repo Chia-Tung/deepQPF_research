@@ -19,10 +19,9 @@ train_config:
       is_oup: False
   data_loader_params:
     # all the keys are listed in the constructor of PLDataLoader
-    train_start: 2021_06_04 
-    train_end: 2021_12_31
-    val_start: 2022_01_01
-    val_end: 2022_06_01
+    start_date: 2021_06_04 
+    end_date: 2021_12_31
+    ratios: [0.6, 0.2, 0.2]
     batch_size: 32
     num_workers: 4
     input_len: 6
@@ -30,3 +29,5 @@ train_config:
     output_interval: 6
     img_size: (120, 120)
     sampling_rate: 6
+    # testing data in constant
+    # crop region in constant

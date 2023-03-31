@@ -1,12 +1,12 @@
 import yaml
 
-from src.data_loaders.pl_data_loader import PLDataLoader
+from src.data_manager import DataManager
 
 config_file = './exp_config/exp1.yml'
 with open(config_file, "r") as content:
     config = yaml.safe_load(content)
 
-my_loader = PLDataLoader(
+my_loader = DataManager(
     data_meta_info=config['train_config']['data_meta_info'], **config['train_config']['data_loader_params']
 )
 
