@@ -2,6 +2,7 @@ from typing import List
 from datetime import datetime, timedelta
 
 from src.data_loaders.basic_loader import BasicLoader
+from src.file_readers.netcdf_reader import NetcdfReader
 
 class RadarLoader(BasicLoader):
     GRANULARITY = 10 # 10-min
@@ -27,5 +28,7 @@ class RadarLoader(BasicLoader):
         return list(set(output_time_list).intersection(set(original_time_list)))
     
     def load_data_from_datetime(self, dt: datetime):
+        if self._reader == None:
+            self._reader = NetcdfReader()
         file_path = self._BasicLoader__all_files[self.time_list.index(dt)]
-        return self.read(file_path)
+        return self._reader.read(file_path, 'cv')

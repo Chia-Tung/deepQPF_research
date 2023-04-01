@@ -1,10 +1,11 @@
 # For non-given arguments, just leave it empty
 model:
-  name: HELLO
+  name: BalancedGRUAdvPONI
   loss_config:
     type:
 train_config:
   data_meta_info:
+    # variable nicknames are listed in LoaderMapping
     rain:
       path: "/work/dong1128/database/rain_rate_ten_min"
       formatter: "%Y%m%d_%H%M.nc"

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List
 
 from src.data_loaders.basic_loader import BasicLoader
+from src.loader_mapping import LoaderMapping
 
 
 class AdoptedDataset(Dataset):
@@ -35,18 +36,18 @@ class AdoptedDataset(Dataset):
     def __getitem__(self, index):
         target_time = self._start_time_list[index]
 
-        input_maps = []
+        input_data_map = {}
         for data_loader in self._data_loader_list:
             if data_loader.is_inp:
-                input_maps.append(
-                    data_loader.load_data_from_datetime(target_time, self._ilen)
-                )
+                nickname = LoaderMapping.get_loader_nickname()
+                input_data_map[nickname] = \
+                    self.prepare_input_dataset()
             if data_loader.is_oup:
-                target = data_loader.load_data_from_datetime(
-                    target_time, self._olen, self._oint
-                )
+                # shape of each element [3, 120, 120]
+                target = self.prepare_output_dataset()
 
-        # NOTE rain data must always be the first one
+        # TODO rain data must always be the first one not neccessary
+        # input data 
         input_maps = np.concatenate(input_maps, axis=1)
 
         mask = np.zeros_like(target)
@@ -54,6 +55,12 @@ class AdoptedDataset(Dataset):
         assert target.max() < 500
         return input_maps, target, mask
 
+    def prepare_input_dataset(self):
+        # shape of each element [6, 1, 120, 120]
+        pass
+
+    def prepare_output_dataset(self):
+        pass
         # self._index_map = []
         # # There is an issue in python 3.6.10 with multiprocessing. workers should therefore be set to 0.
         # self._dataset = load_data(

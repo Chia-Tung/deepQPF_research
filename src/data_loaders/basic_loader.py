@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List
 
-from src.time_util import TimeUtil
+from src.utils.time_util import TimeUtil
 
 class BasicLoader(metaclass=abc.ABCMeta):
     # static variable
@@ -25,7 +25,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
         is_inp: bool = False, 
         is_oup: bool = False
     ):
-        if self.__class__.init_flag:
+        if self.__class__.init_flag: # singleton pattern
            print(f"Call {self.__class__.__name__} Singleton Object.")
            return
         
@@ -40,17 +40,18 @@ class BasicLoader(metaclass=abc.ABCMeta):
         self.__FACTOR = normalize_factor
         self.__IS_INP = is_inp
         self.__IS_OUP = is_oup
+        self._reader = None # strategy pattern
 
         self.__all_files, self.__time_list = self.list_all_time()
         self.__class__.init_flag = True
         print(self.__class__.__name__, " instantiate.")
     
     @abc.abstractmethod
-    def load_data_from_datetime(self, start_t: datetime, end_t: datetime):
+    def load_data_from_datetime(self):
         return NotImplemented
     
     @abc.abstractmethod
-    def cross_check_start_time(self, original_time_list: List[datetime], ilen: int):
+    def cross_check_start_time(self):
         return NotImplemented
     
     @property

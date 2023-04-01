@@ -43,10 +43,12 @@ class DataManager(LightningDataModule):
         self._setup()
 
     def _setup(self):
-        # TODO: Load data in sparse metrix
+        # TODO: Load data in sparse metrix.
         self._all_loaders = LoaderMapping.get_all_loaders(self._data_meta_info)
 
-        # handle output loader, expecting only one selected
+        # handle output loader
+        # NOTE: Only one output parameter is allowed.
+        # TODO: Try-catch more than one output.
         start_time_list = next(
             filter(lambda x: x.is_oup, self._all_loaders)
         ).set_start_time_list(self._olen, self._output_interval)

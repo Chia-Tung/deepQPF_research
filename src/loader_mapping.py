@@ -22,3 +22,7 @@ class LoaderMapping(Enum):
     @classmethod
     def get_loader_type(cls, key):
         return cls[key].value
+    
+    @classmethod
+    def get_loader_nickname(cls, ):
+        pass
