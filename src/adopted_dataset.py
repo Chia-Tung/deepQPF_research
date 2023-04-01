@@ -6,14 +6,13 @@ from typing import List
 from src.data_loaders.basic_loader import BasicLoader
 from src.loader_mapping import LoaderMapping
 
-
 class AdoptedDataset(Dataset):
     def __init__(
         self,
         ilen: int, 
         olen: int,
         oint: int,
-        start_time_list: List[datetime],
+        initial_time_list: List[datetime],
         data_loader_list: List[BasicLoader],
         sampling_rate: int,
         threshold: float, 
@@ -22,7 +21,7 @@ class AdoptedDataset(Dataset):
         is_test: bool = False,
     ):
         super().__init__()
-        self._start_time_list = start_time_list
+        self._initial_time_list = initial_time_list
         self._data_loader_list = data_loader_list
         self._sampling_rate = sampling_rate
         self._ilen = ilen
@@ -31,10 +30,10 @@ class AdoptedDataset(Dataset):
         self._thsh = threshold
 
     def __len__(self):
-        return len(self._start_time_list) // self._sampling_rate
+        return len(self._initial_time_list) // self._sampling_rate
     
     def __getitem__(self, index):
-        target_time = self._start_time_list[index]
+        target_time = self._initial_time_list[index]
 
         input_data_map = {}
         output_data_map = {}

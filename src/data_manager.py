@@ -49,26 +49,26 @@ class DataManager(LightningDataModule):
         # handle output loader
         # NOTE: Only one output parameter is allowed.
         # TODO: Try-catch more than one output.
-        start_time_list = next(
+        initial_time_list = next(
             filter(lambda x: x.is_oup, self._all_loaders)
         ).set_start_time_list(self._olen, self._output_interval)
 
         # handle input loaders
         for single_loader in (loader for loader in self._all_loaders if loader.is_inp):
-            start_time_list = single_loader.cross_check_start_time(start_time_list, self._ilen)
+            initial_time_list = single_loader.cross_check_start_time(initial_time_list, self._ilen)
 
         # random split
         # TODO: Make the dispatch more solid. Namely, seperate testing time in 
         #       a `Constant.py` or use a rule-based dispatch algorithm.
         random.seed(1000)
-        random.shuffle(sorted(start_time_list))
+        random.shuffle(sorted(initial_time_list))
         self._ratios = np.array(self._ratios) / np.array(self._ratios).sum()
-        num_train = int(len(start_time_list) * self._ratios[0])
-        num_valid = int(len(start_time_list) * self._ratios[1])
+        num_train = int(len(initial_time_list) * self._ratios[0])
+        num_valid = int(len(initial_time_list) * self._ratios[1])
 
-        train_time = start_time_list[:num_train]
-        valid_time = start_time_list[num_train:num_train+num_valid]
-        test_time = start_time_list[num_train+num_valid:]
+        train_time = initial_time_list[:num_train]
+        valid_time = initial_time_list[num_train:num_train+num_valid]
+        test_time = initial_time_list[num_train+num_valid:]
         
         print(f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}; " + 
             f"Developing Data Size: {len(valid_time)}; " + 
@@ -78,7 +78,7 @@ class DataManager(LightningDataModule):
             self._ilen,
             self._olen,
             self._output_interval,
-            start_time_list = train_time,
+            initial_time_list = train_time,
             data_loader_list = self._all_loaders,
             sampling_rate = self._sampling_rate,
             threshold = self._threshold,
@@ -89,7 +89,7 @@ class DataManager(LightningDataModule):
             self._ilen,
             self._olen,
             self._output_interval,
-            start_time_list = valid_time,
+            initial_time_list = valid_time,
             data_loader_list = self._all_loaders,
             sampling_rate = self._sampling_rate,
             threshold = self._threshold,
@@ -100,7 +100,7 @@ class DataManager(LightningDataModule):
             self._ilen,
             self._olen,
             self._output_interval,
-            start_time_list = test_time,
+            initial_time_list = test_time,
             data_loader_list = self._all_loaders,
             sampling_rate = self._sampling_rate,
             threshold = self._threshold,

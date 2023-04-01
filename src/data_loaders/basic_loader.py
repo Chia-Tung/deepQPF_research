@@ -87,7 +87,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
     
     def set_start_time_list(self, output_len: int, output_interval: int) -> List[datetime]:
         """
-        This function stores the "start time" defined in Meteorology. 
+        This function stores the "initial time" defined in Meteorology. 
         Note that most of the parameters are recording "data in the past".
         """
         time_map = []
