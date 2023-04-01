@@ -29,6 +29,6 @@ train_config:
     output_len: 3
     output_interval: 6
     img_size: (120, 120)
-    sampling_rate: 6
+    sampling_rate: 1
     # testing data in constant
     # crop region in constant

@@ -1,6 +1,6 @@
 import numpy as np
 from torch.utils.data import Dataset
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
 from src.data_loaders.basic_loader import BasicLoader
@@ -37,30 +37,20 @@ class AdoptedDataset(Dataset):
         target_time = self._start_time_list[index]
 
         input_data_map = {}
+        output_data_map = {}
         for data_loader in self._data_loader_list:
+            nickname = LoaderMapping.get_loader_nickname(data_loader)
             if data_loader.is_inp:
-                nickname = LoaderMapping.get_loader_nickname()
-                input_data_map[nickname] = \
-                    self.prepare_input_dataset()
+                input_data_map[nickname] = data_loader.load_input_data(target_time, self._ilen)
             if data_loader.is_oup:
-                # shape of each element [3, 120, 120]
-                target = self.prepare_output_dataset()
+                output_data_map[nickname] = data_loader.load_output_data()
+        return input_data_map, output_data_map
 
-        # TODO rain data must always be the first one not neccessary
-        # input data 
-        input_maps = np.concatenate(input_maps, axis=1)
-
-        mask = np.zeros_like(target)
-        mask[target > self._thsh] = 1
-        assert target.max() < 500
-        return input_maps, target, mask
-
-    def prepare_input_dataset(self):
-        # shape of each element [6, 1, 120, 120]
-        pass
-
-    def prepare_output_dataset(self):
-        pass
+        mask = np.zeros_like(output_data_map)
+        mask[output_data_map > self._thsh] = 1
+        assert output_data_map.max() < 500
+        return input_data_map, output_data_map, mask
+    
         # self._index_map = []
         # # There is an issue in python 3.6.10 with multiprocessing. workers should therefore be set to 0.
         # self._dataset = load_data(

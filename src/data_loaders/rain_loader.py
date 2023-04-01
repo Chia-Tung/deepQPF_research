@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 from datetime import datetime, timedelta
 
@@ -27,7 +28,26 @@ class RainLoader(BasicLoader):
         
         return list(set(output_time_list).intersection(set(original_time_list)))
     
-    def load_data_from_datetime(self, dt: datetime):
+    def load_input_data(self, start_time: datetime, ilen: int) -> np.ndarray:
+        """
+        Args:
+            start_time (datetime): The start time of a predicted event.
+            ilen (int): Input length.
+
+        Returns: 
+            data (np.ndarray): shape is [ilen, H, W]
+        """
+        data = []
+        for time_offset in (timedelta(minutes=self.GRANULARITY * i) for i in range(ilen)):
+            start_time -= time_offset
+            # TODO: handle ma.MaskArray
+            data.append(np.array(self.load_data_from_datetime(start_time))[None, ...])
+        return np.concatenate(data, axis=0)
+    
+    def load_output_data(self) -> np.ndarray:
+        pass
+    
+    def load_data_from_datetime(self, dt: datetime) -> np.ma.MaskedArray:
         if self._reader == None:
             self._reader = NetcdfReader()
         file_path = self._BasicLoader__all_files[self.time_list.index(dt)]

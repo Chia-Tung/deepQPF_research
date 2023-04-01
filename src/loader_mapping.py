@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Dict
 
+from src.data_loaders.basic_loader import BasicLoader
 from src.data_loaders.rain_loader import RainLoader
 from src.data_loaders.radar_loader import RadarLoader
 
@@ -24,5 +25,7 @@ class LoaderMapping(Enum):
         return cls[key].value
     
     @classmethod
-    def get_loader_nickname(cls, ):
-        pass
+    def get_loader_nickname(cls, data_loader: BasicLoader) -> str:
+        for member in cls:
+            if isinstance(data_loader, member.value):
+                return member.name

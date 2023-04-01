@@ -26,8 +26,8 @@ class BasicLoader(metaclass=abc.ABCMeta):
         is_oup: bool = False
     ):
         if self.__class__.init_flag: # singleton pattern
-           print(f"Call {self.__class__.__name__} Singleton Object.")
-           return
+            print(f"Call {self.__class__.__name__} Singleton Object.")
+            return
         
         if path == None  or len(path) == 0:
             raise RuntimeError(self.__class__.__name__, " data path must be given.")
@@ -45,6 +45,14 @@ class BasicLoader(metaclass=abc.ABCMeta):
         self.__all_files, self.__time_list = self.list_all_time()
         self.__class__.init_flag = True
         print(self.__class__.__name__, " instantiate.")
+    
+    @abc.abstractmethod
+    def load_input_data(self):
+        return NotImplemented
+    
+    @abc.abstractmethod
+    def load_output_data(self):
+        return NotImplemented
     
     @abc.abstractmethod
     def load_data_from_datetime(self):

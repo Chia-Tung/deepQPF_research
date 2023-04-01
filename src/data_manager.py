@@ -62,17 +62,17 @@ class DataManager(LightningDataModule):
         #       a `Constant.py` or use a rule-based dispatch algorithm.
         random.seed(1000)
         random.shuffle(sorted(start_time_list))
-        ratios = np.array(ratios) / np.array(ratios).sum()
-        num_train = int(len(start_time_list) * ratios[0])
-        num_valid = int(len(start_time_list) * ratios[1])
+        self._ratios = np.array(self._ratios) / np.array(self._ratios).sum()
+        num_train = int(len(start_time_list) * self._ratios[0])
+        num_valid = int(len(start_time_list) * self._ratios[1])
 
         train_time = start_time_list[:num_train]
         valid_time = start_time_list[num_train:num_train+num_valid]
         test_time = start_time_list[num_train+num_valid:]
         
         print(f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}; " + 
-              f"Developing Data Size: {len(valid_time)}; " + 
-              f"Testing Data Size: {len(test_time)}")
+            f"Developing Data Size: {len(valid_time)}; " + 
+            f"Testing Data Size: {len(test_time)}")
 
         self._train_dataset = AdoptedDataset(
             self._ilen,
@@ -109,8 +109,8 @@ class DataManager(LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(self._train_dataset, batch_size=self._batch_size, 
-                          num_workers=self._workers, shuffle=True)
+            num_workers=self._workers, shuffle=True)
 
     def val_dataloader(self):
         return DataLoader(self._valid_dataset, batch_size=self._batch_size, 
-                          num_workers=self._workers, shuffle=True)
+            num_workers=self._workers, shuffle=True)
