@@ -23,12 +23,14 @@ train_config:
     start_date: 2021_06_04 
     end_date: 2021_12_31
     ratios: [0.6, 0.2, 0.2]
-    batch_size: 32
-    num_workers: 4
     input_len: 6
     output_len: 3
     output_interval: 6
-    img_size: (120, 120)
+    target_lat: [24.0625, 25.55]
+    target_lon: [120.6875, 122.175]
+    target_shape: (120, 120)
     sampling_rate: 1
+    batch_size: 32
+    num_workers: 4
     # testing data in constant
     # crop region in constant

@@ -19,7 +19,9 @@ class DataManager(LightningDataModule):
         output_interval: int,
         threshold: float = None,
         hourly_data: bool = False,
-        img_size: Tuple[int] = None,
+        target_shape: Tuple[int] = None,
+        target_lat: List[float] = None,
+        target_lon: List[float] = None,
         sampling_rate: int = None,
         batch_size: int = 32,
         num_workers: int = 4,
@@ -31,15 +33,18 @@ class DataManager(LightningDataModule):
         self._data_meta_info = data_meta_info
         self._ilen = input_len
         self._olen = output_len
-        self._output_interval = output_interval
+        self._oint = output_interval
         self._threshold = threshold
         self._hourly_data = hourly_data
-        self._img_size = img_size
+        self._target_shape = target_shape
+        self._target_lat = target_lat
+        self._target_lon = target_lon
         self._sampling_rate = sampling_rate
         self._batch_size = batch_size
         self._workers = num_workers
         self._train_dataset = None
-        self._val_dataset = None
+        self._valid_dataset = None
+        self._eval_dataset = None
         self._setup()
 
     def _setup(self):
@@ -51,7 +56,7 @@ class DataManager(LightningDataModule):
         # TODO: Try-catch more than one output.
         initial_time_list = next(
             filter(lambda x: x.is_oup, self._all_loaders)
-        ).set_start_time_list(self._olen, self._output_interval)
+        ).set_start_time_list(self._olen, self._oint)
 
         # handle input loaders
         for single_loader in (loader for loader in self._all_loaders if loader.is_inp):
@@ -77,7 +82,10 @@ class DataManager(LightningDataModule):
         self._train_dataset = AdoptedDataset(
             self._ilen,
             self._olen,
-            self._output_interval,
+            self._oint,
+            self._target_shape,
+            self._target_lat,
+            self._target_lon,
             initial_time_list = train_time,
             data_loader_list = self._all_loaders,
             sampling_rate = self._sampling_rate,
@@ -88,7 +96,10 @@ class DataManager(LightningDataModule):
         self._valid_dataset = AdoptedDataset(
             self._ilen,
             self._olen,
-            self._output_interval,
+            self._oint,
+            self._target_shape,
+            self._target_lat,
+            self._target_lon,
             initial_time_list = valid_time,
             data_loader_list = self._all_loaders,
             sampling_rate = self._sampling_rate,
@@ -99,7 +110,10 @@ class DataManager(LightningDataModule):
         self._eval_dataset = AdoptedDataset(
             self._ilen,
             self._olen,
-            self._output_interval,
+            self._oint,
+            self._target_shape,
+            self._target_lat,
+            self._target_lon,
             initial_time_list = test_time,
             data_loader_list = self._all_loaders,
             sampling_rate = self._sampling_rate,

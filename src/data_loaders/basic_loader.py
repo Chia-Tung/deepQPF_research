@@ -40,6 +40,8 @@ class BasicLoader(metaclass=abc.ABCMeta):
         self.__FACTOR = normalize_factor
         self.__IS_INP = is_inp
         self.__IS_OUP = is_oup
+        self._lat_range = None # late init or non-init
+        self._lon_range = None # late init or non-init
         self._reader = None # strategy pattern
 
         self.__all_files, self.__time_list = self.list_all_time()
@@ -47,15 +49,15 @@ class BasicLoader(metaclass=abc.ABCMeta):
         print(self.__class__.__name__, " instantiate.")
     
     @abc.abstractmethod
-    def load_input_data(self):
+    def load_input_data(self, target_time, ilen, target_lat, target_lon):
         return NotImplemented
     
     @abc.abstractmethod
-    def load_output_data(self):
+    def load_output_data(self, target_time, olen, oint, target_lat, target_lon):
         return NotImplemented
     
     @abc.abstractmethod
-    def load_data_from_datetime(self):
+    def load_data_from_datetime(self, dt):
         return NotImplemented
     
     @abc.abstractmethod
