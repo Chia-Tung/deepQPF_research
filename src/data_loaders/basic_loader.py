@@ -1,4 +1,5 @@
 import abc
+import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -49,7 +50,8 @@ class BasicLoader(metaclass=abc.ABCMeta):
         print(self.__class__.__name__, " instantiate.")
     
     @abc.abstractmethod
-    def load_input_data(self, target_time, ilen, target_lat, target_lon):
+    def load_input_data(self, target_time: datetime, ilen: int,
+        target_lat: List[float], target_lon: List[float]) -> np.ndarray:
         return NotImplemented
     
     @abc.abstractmethod

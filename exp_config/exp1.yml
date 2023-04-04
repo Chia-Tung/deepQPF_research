@@ -9,13 +9,13 @@ train_config:
     rain:
       path: "/work/dong1128/database/rain_rate_ten_min"
       formatter: "%Y%m%d_%H%M.nc"
-      normalize_factor:
+      normalize_factor: 10
       is_inp: True
       is_oup: True
     radar:
       path: "/work/dong1128/database/radar_2d_cropped"
       formatter: "%Y%m%d_%H%M.nc"
-      normalize_factor: 30
+      normalize_factor: 35
       is_inp: True
       is_oup: False
   data_loader_params:
@@ -29,8 +29,8 @@ train_config:
     target_lat: [24.0625, 25.55]
     target_lon: [120.6875, 122.175]
     target_shape: (120, 120)
-    sampling_rate: 1
+    threshold: 0.5
+    sampling_rate: 5
     batch_size: 32
     num_workers: 4
     # testing data in constant
-    # crop region in constant

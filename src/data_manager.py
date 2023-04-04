@@ -1,8 +1,9 @@
+import ast
 import random
 import numpy as np
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
-from typing import Tuple, Dict, List
+from typing import Dict, List
 
 from src.loader_mapping import LoaderMapping
 from src.adopted_dataset import AdoptedDataset
@@ -19,7 +20,7 @@ class DataManager(LightningDataModule):
         output_interval: int,
         threshold: float = None,
         hourly_data: bool = False,
-        target_shape: Tuple[int] = None,
+        target_shape: str = None,
         target_lat: List[float] = None,
         target_lon: List[float] = None,
         sampling_rate: int = None,
@@ -36,7 +37,7 @@ class DataManager(LightningDataModule):
         self._oint = output_interval
         self._threshold = threshold
         self._hourly_data = hourly_data
-        self._target_shape = target_shape
+        self._target_shape = ast.literal_eval(target_shape)
         self._target_lat = target_lat
         self._target_lon = target_lon
         self._sampling_rate = sampling_rate

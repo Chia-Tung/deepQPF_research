@@ -13,9 +13,9 @@ class RadarLoader(BasicLoader):
         super().__init__(**kwarg)
         if self._reader == None:
             self._reader = NetcdfReader()
-        if self._lat_range == None:
+        if self._lat_range is None:
             self.set_lat_range()
-        if self._lon_range == None:
+        if self._lon_range is None:
             self.set_lon_range()
 
     def cross_check_start_time(
@@ -36,12 +36,12 @@ class RadarLoader(BasicLoader):
         return list(set(output_time_list).intersection(set(original_time_list)))
 
     def load_input_data(
-            self, 
-            target_time: datetime, 
-            ilen: int,
-            target_lat: List[float],
-            target_lon: List[float]
-        ) -> np.ndarray:
+        self, 
+        target_time: datetime, 
+        ilen: int,
+        target_lat: List[float],
+        target_lon: List[float]
+    ) -> np.ndarray:
         """
         Args:
             target_time (datetime): The start time of a predicted event.
@@ -63,6 +63,8 @@ class RadarLoader(BasicLoader):
                 array_data, self._lat_range, self._lon_range, target_lat, target_lon)
             # expand dimension
             array_data = array_data[None]
+            # normalizatoin
+            array_data /= self._BasicLoader__FACTOR
 
             data.append(array_data)
         return np.concatenate(data, axis=0)
