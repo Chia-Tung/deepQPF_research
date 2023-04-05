@@ -1,14 +1,31 @@
+import os
+import sys
 import yaml
+import argparse
+import torch
+import torchvision
 
 from src.data_manager import DataManager
+from src.model_manager import ModelManager
 
-config_file = './exp_config/exp1.yml'
-with open(config_file, "r") as content:
-    config = yaml.safe_load(content)
+os.environ['CUDA_VISIBLE_DEVICES']="0"
+print('Python version', sys.version)
+print('CudaToolKit Version', torch.version.cuda)
+print('torch Version', torch.__version__)
+print('torchvision Version', torchvision.__version__)
 
-my_loader = DataManager(
-    data_meta_info=config['train_config']['data_meta_info'], **config['train_config']['data_loader_params']
-)
+def main():
+    config_file = './exp_config/exp1.yml'
+    with open(config_file, "r") as content:
+        config = yaml.safe_load(content)
+
+    dm = DataManager(
+        data_meta_info=config['train_config']['data_meta_info'], 
+        **config['train_config']['data_loader_params']
+    )
+
+if __name__ == '__main__':
+    main()
 
 # import argparse
 # import os, sys

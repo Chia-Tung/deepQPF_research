@@ -55,15 +55,17 @@ class BasicLoader(metaclass=abc.ABCMeta):
         return NotImplemented
     
     @abc.abstractmethod
-    def load_output_data(self, target_time, olen, oint, target_lat, target_lon):
+    def load_output_data(self, target_time: datetime, olen: int,
+        oint: int, target_lat: List[float], target_lon: List[float]) -> np.ndarray:
         return NotImplemented
     
     @abc.abstractmethod
-    def load_data_from_datetime(self, dt):
+    def load_data_from_datetime(self, dt: datetime) -> np.ndarray:
         return NotImplemented
     
     @abc.abstractmethod
-    def cross_check_start_time(self):
+    def cross_check_start_time(self, original_time_list: List[datetime], 
+        ilen: int) -> List[datetime]:
         return NotImplemented
     
     @property

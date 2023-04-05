@@ -20,7 +20,7 @@ train_config:
       is_oup: False
   data_loader_params:
     # all the keys are listed in the constructor of PLDataLoader
-    start_date: 2021_06_04 
+    start_date: 2015_01_01
     end_date: 2021_12_31
     ratios: [0.6, 0.2, 0.2]
     input_len: 6

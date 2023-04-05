@@ -129,3 +129,6 @@ class DataManager(LightningDataModule):
     def val_dataloader(self):
         return DataLoader(self._valid_dataset, batch_size=self._batch_size, 
             num_workers=self._workers, shuffle=True)
+    
+    def get_data_info(self):
+        return {'shape': self._target_shape, 'vname': list(self._data_meta_info.keys())}
