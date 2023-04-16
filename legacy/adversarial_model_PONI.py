@@ -45,28 +45,39 @@ class BalAdvPoniModel(LightningModule):
         # self._train_D_stats = DiscriminatorStats()
         self._val_criterion = PerformanceDiagramStable()
         self._D_stats = DiscriminatorStats()
+        self.automatic_optimization = False
+        self.validation_step_outputs = []
         print(f'[{self.__class__.__name__} W:{self._adv_w}] Ckp:{os.path.join(self._ckp_dir)} ')
     
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
         train_data, train_label, train_mask = batch
+        g_opt, d_opt = self.optimizers()
         N = train_data['rain'].shape[0]
-        if optimizer_idx == 0:
-            loss_dict = self.generator_loss(train_data, train_label, train_mask)
-            self._recon_loss.add(loss_dict['progress_bar']['recon_loss'].item() * N, N)
-            self._GD_loss.add(loss_dict['progress_bar']['adv_loss'].item() * N, N)
-            self._G_loss.add(loss_dict['loss'].item() * N, N)
-            self.log('G', self._G_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
-            self.log('GRecon', self._recon_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
-            self.log('GD', self._GD_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
+
+        # train generator
+        self.toggle_optimizer(g_opt)
+        loss_dict = self.generator_loss(train_data, train_label, train_mask)
+        self._recon_loss.add(loss_dict['progress_bar']['recon_loss'].item() * N, N)
+        self._GD_loss.add(loss_dict['progress_bar']['adv_loss'].item() * N, N)
+        self._G_loss.add(loss_dict['loss'].item() * N, N)
+        self.log('G', self._G_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
+        self.log('GRecon', self._recon_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
+        self.log('GD', self._GD_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
+        self.manual_backward(loss_dict['loss'])
+        g_opt.step()
+        g_opt.zero_grad()
+        self.untoggle_optimizer(g_opt)
 
         # train discriminator
-        if optimizer_idx == 1:
-            loss_dict = self.discriminator_loss(train_data, train_label)
-            self._D_loss.add(loss_dict['loss'].item() * N, N)
-            self.log('D', self._D_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
-            # balance discriminator
-            return loss_dict['loss'] * self._adv_w
-        return loss_dict['loss']
+        self.toggle_optimizer(d_opt)
+        loss_dict = self.discriminator_loss(train_data, train_label)
+        self._D_loss.add(loss_dict['loss'].item() * N, N)
+        self.log('D', self._D_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
+        # balance discriminator
+        self.manual_backward(loss_dict['loss'] * self._adv_w)
+        d_opt.step()
+        d_opt.zero_grad()
+        self.untoggle_optimizer(d_opt)
 
     def generator_loss(self, input_data, target_label, target_mask):
         predicted_reconstruction = self(input_data, target_label)
@@ -151,12 +162,14 @@ class BalAdvPoniModel(LightningModule):
         self._D_stats.update(neg, pos)
 
         log_data = loss_dict.pop('progress_bar')
-        return {'val_loss': log_data['recon_loss'], 'N': val_label.shape[0]}
+        output = {'val_loss': log_data['recon_loss'], 'N': val_label.shape[0]}
+        self.validation_step_outputs.append(output)
+        return output
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         val_loss_sum = 0
         N = 0
-        for output in outputs:
+        for output in self.validation_step_outputs:
             val_loss_sum += output['val_loss'] * output['N']
             # this may not have the entire batch. but we are still multiplying it by N
             N += output['N']
@@ -172,6 +185,7 @@ class BalAdvPoniModel(LightningModule):
         pdsr = self._val_criterion.get()['Dotmetric']
         self._val_criterion.reset()
         self.log('pdsr', pdsr)
+        self.validation_step_outputs.clear()
 
     def on__epoch_end(self, *args):
         self._G_loss.reset()

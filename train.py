@@ -34,7 +34,7 @@ def main():
     trainer = Trainer(
         benchmark=True,
         accelerator='gpu',
-        devices=[1],
+        devices=[0],
         max_epochs=50, 
         fast_dev_run=False, 
         logger=logger,

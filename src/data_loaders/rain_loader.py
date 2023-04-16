@@ -117,9 +117,9 @@ class RainLoader(BasicLoader):
         # the `stack` function will throw error messages.
 
         # invalid check
-        if np.max(data) >= self._MAX_RAIN_ACCU:
-            raise RuntimeError (
-                f"[{self.__class__.__name__}] Invalid quantity when loading {target_time}")
+        # if np.max(data) >= self._MAX_RAIN_ACCU:
+        #     raise RuntimeError (
+        #         f"[{self.__class__.__name__}] Invalid quantity when loading {target_time}")
         
         return data
     

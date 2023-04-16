@@ -4,20 +4,20 @@ model:
   teach_force: 0.5
   adv_w: 0.01
   dis_d: 3
-  checkpoint_dir: "/wk171/handsomedong/deepQPF_research/checkpoint/"
+  checkpoint_dir: "/home/dong1128/deepQPF_research/checkpoint/"
   loss_config:
     type:
 train_config:
   data_meta_info:
     # variable nicknames are listed in LoaderMapping
     rain:
-      path: "/bk2/handsomedong/deepQPF_DB/rain_rate_ten_min"
+      path: "/work/dong1128/database/rain_rate_ten_min"
       formatter: "%Y%m%d_%H%M.nc"
       normalize_factor: 10
       is_inp: True
       is_oup: True
     radar:
-      path: "/bk2/handsomedong/deepQPF_DB/radar_2d_cropped"
+      path: "/work/dong1128/database/radar_2d_cropped"
       formatter: "%Y%m%d_%H%M.nc"
       normalize_factor: 35
       is_inp: True
@@ -35,6 +35,6 @@ train_config:
     target_shape: (120, 120)
     threshold: 0.5
     sampling_rate: 5
-    batch_size: 32
-    num_workers: 8
+    batch_size: 64
+    num_workers: 4
     # testing data in constant
