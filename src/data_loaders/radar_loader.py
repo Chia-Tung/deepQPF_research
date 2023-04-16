@@ -50,7 +50,7 @@ class RadarLoader(BasicLoader):
             target_lon (List[float]): Target longitude to crop.
 
         Returns: 
-            data (np.ndarray): shape is [ilen, H, W]
+            data (np.ndarray): shape is [ilen, CH, H, W]
         """
         data = []
         for time_offset in (timedelta(minutes=self.GRANULARITY * i) for i in range(ilen-1, -1, -1)):
@@ -67,7 +67,7 @@ class RadarLoader(BasicLoader):
             array_data /= self._BasicLoader__FACTOR
 
             data.append(array_data)
-        return np.concatenate(data, axis=0)
+        return np.concatenate(data, axis=0)[:, None]
     
     def load_output_data(self, target_time, olen, oint, target_lat, target_lon) -> np.ndarray:
         pass

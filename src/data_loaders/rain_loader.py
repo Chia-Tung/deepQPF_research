@@ -51,7 +51,7 @@ class RainLoader(BasicLoader):
             target_lon (List[float]): Target longitude to crop.
 
         Returns: 
-            data (np.ndarray): Rain rate which has a shape of [ilen, H, W].
+            data (np.ndarray): Rain rate which has a shape of [ilen, CH, H, W].
         """
         data = []
         for time_offset in (timedelta(minutes=self.GRANULARITY * i) for i in range(ilen-1, -1, -1)):
@@ -68,7 +68,7 @@ class RainLoader(BasicLoader):
             array_data /= self._BasicLoader__FACTOR
 
             data.append(array_data)
-        return np.concatenate(data, axis=0)
+        return np.concatenate(data, axis=0)[:, None]
     
     def load_output_data(
         self, 

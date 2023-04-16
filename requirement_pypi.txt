@@ -1,5 +1,5 @@
-pytorch-lightning # v2.0.0
-pytorch-msssim
+pytorch-lightning==1.9.*
 ipykernel
 netcdf4
 metpy
+tensorboard

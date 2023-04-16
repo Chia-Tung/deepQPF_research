@@ -77,7 +77,7 @@ class DataManager(LightningDataModule):
         test_time = initial_time_list[num_train+num_valid:]
         
         print(f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}; " + 
-            f"Developing Data Size: {len(valid_time)}; " + 
+            f"Validating Data Size: {len(valid_time)}; " + 
             f"Testing Data Size: {len(test_time)}")
 
         self._train_dataset = AdoptedDataset(
@@ -128,7 +128,12 @@ class DataManager(LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(self._valid_dataset, batch_size=self._batch_size, 
-            num_workers=self._workers, shuffle=True)
+            num_workers=self._workers, shuffle=False)
     
     def get_data_info(self):
-        return {'shape': self._target_shape, 'vname': list(self._data_meta_info.keys())}
+        inp_data_map = self._train_dataset[0][0]
+        return {
+            'shape': self._target_shape, 
+            'channel': {k: v.shape[1] for k, v in inp_data_map.items()},
+            'olen': self._olen,
+        }

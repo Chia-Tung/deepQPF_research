@@ -47,7 +47,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
 
         self.__all_files, self.__time_list = self.list_all_time()
         self.__class__.init_flag = True
-        print(self.__class__.__name__, " instantiate.")
+        print(self.__class__.__name__, " instantiated.")
     
     @abc.abstractmethod
     def load_input_data(self, target_time: datetime, ilen: int,
