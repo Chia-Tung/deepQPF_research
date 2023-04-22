@@ -49,7 +49,6 @@ class DataManager(LightningDataModule):
         self._setup()
 
     def _setup(self):
-        # TODO: Load data in sparse metrix.
         self._all_loaders = LoaderMapping.get_all_loaders(self._data_meta_info)
 
         # handle output loader

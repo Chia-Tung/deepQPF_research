@@ -11,12 +11,12 @@ class RadarLoader(BasicLoader):
 
     def __init__(self, **kwarg):
         super().__init__(**kwarg)
-        if self._reader == None:
-            self._reader = NetcdfReader()
         if self._lat_range is None:
             self.set_lat_range()
         if self._lon_range is None:
             self.set_lon_range()
+        if self._reader == None:
+            self.set_reader()
 
     def cross_check_start_time(
         self, 
@@ -60,7 +60,8 @@ class RadarLoader(BasicLoader):
             array_data[array_data < 0] = 0
             # handle shape
             array_data = CropUtil.crop_by_coor(
-                array_data, self._lat_range, self._lon_range, target_lat, target_lon)
+                array_data, self._lat_range, self._lon_range, target_lat, target_lon
+            )
             # expand dimension
             array_data = array_data[None]
             # normalizatoin
@@ -88,3 +89,6 @@ class RadarLoader(BasicLoader):
         self._lon_range = self._reader.read(file_path, 'lon')
         assert np.sum(np.isin(self._lon_range, self._reader.INVALID_VALUE)) == 0, \
             f"Longitude range has invalid value in {file_path}"
+
+    def set_reader(self):
+        self._reader = NetcdfReader()

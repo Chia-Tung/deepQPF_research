@@ -4,3 +4,5 @@ ipykernel
 netcdf4
 metpy
 tensorboard
+feather-format
+datatable

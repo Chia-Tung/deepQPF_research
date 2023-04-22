@@ -1,0 +1,40 @@
+# For non-given arguments, just leave it empty
+model:
+  name: BalancedGRUAdvPONI
+  teach_force: 0.5
+  adv_w: 0.01
+  dis_d: 3
+  checkpoint_dir: "/home/dong1128/deepQPF_research/checkpoint/"
+  loss_config:
+    type:
+train_config:
+  data_meta_info:
+    # variable nicknames are listed in LoaderMapping
+    rain:
+      path: "/work/dong1128/database/rain_rate_ten_min_jay"
+      formatter: "%Y%m%d_%H%M.jay"
+      normalize_factor: 10
+      is_inp: True
+      is_oup: True
+    radar:
+      path: "/work/dong1128/database/radar_2d_cropped_jay"
+      formatter: "%Y%m%d_%H%M.jay"
+      normalize_factor: 35
+      is_inp: True
+      is_oup: False
+  data_loader_params:
+    # all the keys are listed in the constructor of PLDataLoader
+    start_date: 2015_01_01
+    end_date: 2021_12_31
+    ratios: [0.6, 0.2, 0.2]
+    input_len: 6
+    output_len: 3
+    output_interval: 6
+    target_lat: [24.0625, 25.55]
+    target_lon: [120.6875, 122.175]
+    target_shape: (120, 120)
+    threshold: 0.5
+    sampling_rate: 5
+    batch_size: 64
+    num_workers: 4
+    # testing data in constant

@@ -3,12 +3,14 @@ from typing import Dict
 
 from src.data_loaders.basic_loader import BasicLoader
 from src.data_loaders.rain_loader import RainLoader
+from src.data_loaders.rain_loader_jay import RainLoaderJay
 from src.data_loaders.radar_loader import RadarLoader
+from src.data_loaders.radar_loader_jay import RadarLoaderJay
 
 class LoaderMapping(Enum):
     """ Genrate Multiple Customized Data Loaders in Singleton Pattern """
-    rain = RainLoader
-    radar = RadarLoader
+    rain = RainLoaderJay
+    radar = RadarLoaderJay
 
     @classmethod
     def get_all_loaders(cls, data_infos: Dict[str, Dict]):

@@ -12,7 +12,7 @@ class CropUtil:
     ) -> np.ndarray:
         """
         Args:
-            data (np.ndarray): The input data which is a 2d np.ndarray with 
+            data (np.ndarray): The input data which is a 2d/3d np.ndarray with 
                 corresponding coordiante `data_lat` and `data_lon`.
             data_lat (np.ndarray): Latitude array for `data`.
             data_lon (np.ndarray): Longitude array for `data`.
@@ -29,5 +29,7 @@ class CropUtil:
         iloc = []
         iloc.extend(list(map(lambda x: np.where(data_lat == x)[0][0], target_lat)))
         iloc.extend(list(map(lambda x: np.where(data_lon == x)[0][0], target_lon)))
-
-        return data[iloc[0]: iloc[1] + 1, iloc[2]: iloc[3] + 1]
+        if len(data.shape) == 2:
+            return data[iloc[0]: iloc[1] + 1, iloc[2]: iloc[3] + 1]
+        elif len(data.shape) == 3:
+            return data[:, iloc[0]: iloc[1] + 1, iloc[2]: iloc[3] + 1]
