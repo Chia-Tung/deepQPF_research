@@ -12,12 +12,12 @@ class RainLoader(BasicLoader):
 
     def __init__(self, **kwarg):
         super().__init__(**kwarg)
+        if self._reader == None:
+            self.set_reader()
         if self._lat_range is None:
             self.set_lat_range()
         if self._lon_range is None:
             self.set_lon_range()
-        if self._reader == None:
-            self.set_reader()
 
     def cross_check_start_time(
         self, 

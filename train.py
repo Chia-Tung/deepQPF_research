@@ -1,7 +1,5 @@
-import os
 import sys
 import yaml
-import argparse
 import torch
 import torchvision
 import torch.utils.cpp_extension
@@ -14,7 +12,7 @@ from src.data_manager import DataManager
 from src.model_builder import ModelBuilder
 
 def main():
-    config_file = './exp_config/exp1.yml'
+    config_file = './exp_config/exp2.yml'
     with open(config_file, "r") as content:
         config = yaml.safe_load(content)
 

@@ -11,13 +11,13 @@ train_config:
   data_meta_info:
     # variable nicknames are listed in LoaderMapping
     rain:
-      path: "/work/dong1128/database/rain_rate_ten_min"
+      path: "/work/dong1128/database/rain_rate_ten_min_nc"
       formatter: "%Y%m%d_%H%M.nc"
       normalize_factor: 10
       is_inp: True
       is_oup: True
     radar:
-      path: "/work/dong1128/database/radar_2d_cropped"
+      path: "/work/dong1128/database/radar_2d_cropped_nc"
       formatter: "%Y%m%d_%H%M.nc"
       normalize_factor: 35
       is_inp: True

@@ -9,17 +9,23 @@ from src.utils.crop_util import CropUtil
 
 class RadarLoaderJay(RadarLoader):
     def __init__(self, **kwarg):
-        super().__init__(**kwarg)
+        super(RadarLoader, self).__init__(**kwarg)
+        if self._lat_range is None:
+            self.set_lat_range()
+        if self._lon_range is None:
+            self.set_lon_range()
+        if self._reader == None:
+            self.set_reader()
 
     # TODO: the specific path should be removed
     def set_lat_range(self):
         file_path = self._BasicLoader__all_files[0]
-        nc_file_path = file_path.replace('jay', 'nc')
+        nc_file_path = str(file_path).replace('jay', 'nc')
         self._lat_range = NetcdfReader().read(nc_file_path, 'lat')
 
     def set_lon_range(self):
         file_path = self._BasicLoader__all_files[0]
-        nc_file_path = file_path.replace('jay', 'nc')
+        nc_file_path = str(file_path).replace('jay', 'nc')
         self._lon_range = NetcdfReader().read(nc_file_path, 'lon')
 
     def set_reader(self):
