@@ -7,12 +7,13 @@ from typing import Dict, List
 
 from src.loader_mapping import LoaderMapping
 from src.adopted_dataset import AdoptedDataset
+from src.utils.time_util import TimeUtil
 
 class DataManager(LightningDataModule):
     def __init__(
         self,
-        start_date: str,
-        end_date: str,
+        start_date: int,
+        end_date: int,
         ratios: List[float],
         data_meta_info: Dict[str, Dict],
         input_len: int,
@@ -26,10 +27,11 @@ class DataManager(LightningDataModule):
         sampling_rate: int = None,
         batch_size: int = 32,
         num_workers: int = 4,
+        order_by_time: bool = True
     ):
         super().__init__()
-        self._start_date = start_date
-        self._end_date = end_date
+        self._start_date = TimeUtil.parse_string_to_time(str(start_date), "%Y%m%d%H%M")
+        self._end_date = TimeUtil.parse_string_to_time(str(end_date), "%Y%m%d%H%M")
         self._ratios = ratios
         self._data_meta_info = data_meta_info
         self._ilen = input_len
@@ -43,6 +45,7 @@ class DataManager(LightningDataModule):
         self._sampling_rate = sampling_rate
         self._batch_size = batch_size
         self._workers = num_workers
+        self._order_by_time = order_by_time
         self._train_dataset = None
         self._valid_dataset = None
         self._eval_dataset = None
@@ -62,11 +65,17 @@ class DataManager(LightningDataModule):
         for single_loader in (loader for loader in self._all_loaders if loader.is_inp):
             initial_time_list = single_loader.cross_check_start_time(initial_time_list, self._ilen)
 
+        # remove illegal datetime
+        initial_time_list = sorted(initial_time_list)
+        start_id, end_id = TimeUtil.find_start_end_index(initial_time_list, self._start_date, self._end_date)
+        initial_time_list = initial_time_list[start_id:end_id+1]
+
         # random split
         # TODO: Make the dispatch more solid. Namely, seperate testing time in 
         #       a `Constant.py` or use a rule-based dispatch algorithm.
-        random.seed(1000)
-        random.shuffle(sorted(initial_time_list))
+        if not self._order_by_time:
+            random.seed(1000)
+            random.shuffle(initial_time_list)
         self._ratios = np.array(self._ratios) / np.array(self._ratios).sum()
         num_train = int(len(initial_time_list) * self._ratios[0])
         num_valid = int(len(initial_time_list) * self._ratios[1])

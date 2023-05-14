@@ -4,13 +4,13 @@ from typing import List, Union
 
 from src.file_readers.jay_reader import JayReader
 from src.file_readers.netcdf_reader import NetcdfReader
-from src.data_loaders.rain_loader import RainLoader
+from src.data_loaders.rain_loader_nc import RainLoaderNc
 from src.utils.crop_util import CropUtil
 
 
-class RainLoaderJay(RainLoader):
+class RainLoaderJay(RainLoaderNc):
     def __init__(self, **kwarg):
-        super(RainLoader, self).__init__(**kwarg)
+        super(RainLoaderNc, self).__init__(**kwarg)
         if self._lat_range is None:
             self.set_lat_range()
         if self._lon_range is None:

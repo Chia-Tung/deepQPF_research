@@ -17,7 +17,8 @@ class SparseMatrixUtil:
             xdim (int): The grid number of latitudinal axis.
             ydim (int): The grid number of longitudinal axis.
             default (float): Default value to fill in the matrix.
+            dtype (np.dtype): The data type chosen from numpy.
         """
         output = np.full([ydim, xdim], default, dtype=dtype)
-        output[sparse_matrix['x'], sparse_matrix['y']] = sparse_matrix['value']
+        output[sparse_matrix['lat_id'], sparse_matrix['lon_id']] = sparse_matrix['value']
         return output

@@ -2,14 +2,14 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Union
 
-from src.data_loaders.radar_loader import RadarLoader
+from src.data_loaders.radar_loader_nc import RadarLoaderNc
 from src.file_readers.netcdf_reader import NetcdfReader
 from src.file_readers.jay_reader import JayReader
 from src.utils.crop_util import CropUtil
 
-class RadarLoaderJay(RadarLoader):
+class RadarLoaderJay(RadarLoaderNc):
     def __init__(self, **kwarg):
-        super(RadarLoader, self).__init__(**kwarg)
+        super(RadarLoaderNc, self).__init__(**kwarg)
         if self._lat_range is None:
             self.set_lat_range()
         if self._lon_range is None:
