@@ -12,7 +12,7 @@ from src.data_manager import DataManager
 from src.model_builder import ModelBuilder
 
 def main():
-    config_file = './exp_config/exp2.yml'
+    config_file = './exp_config/exp1.yml'
     with open(config_file, "r") as content:
         config = yaml.safe_load(content)
 
@@ -27,7 +27,7 @@ def main():
         data_info = dm.get_data_info()
     ).build()
     
-    logger = TensorBoardLogger(save_dir='logs', name=config['model']['name'])
+    logger = TensorBoardLogger(save_dir='logs', name=config['model']['model_config']['name'])
     checkpoint_callback = model.get_checkpoint_callback()
     trainer = Trainer(
         benchmark=True,

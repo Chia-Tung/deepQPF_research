@@ -104,7 +104,7 @@ def get_forecaster_params_GRU():
             BasicGRU(
                 input_channel=128,
                 num_filter=128,
-                h_w=None,  # For forecaster, this variable is never used.
+                h_w=(16, 16),  # For forecaster, this variable is never used.
                 zoneout=0.0,
                 L=13,
                 i2h_kernel=(3, 3),
@@ -117,7 +117,7 @@ def get_forecaster_params_GRU():
             BasicGRU(
                 input_channel=128,
                 num_filter=128,
-                h_w=None,  # For forecaster, this variable is never used.
+                h_w=(32, 32),  # For forecaster, this variable is never used.
                 zoneout=0.0,
                 L=13,
                 i2h_kernel=(3, 3),
@@ -130,7 +130,7 @@ def get_forecaster_params_GRU():
             BasicGRU(
                 input_channel=32,
                 num_filter=32,
-                h_w=None,  # For forecaster, this variable is never used.
+                h_w=(96, 96),  # For forecaster, this variable is never used.
                 zoneout=0.0,
                 L=9,
                 i2h_kernel=(3, 3),
@@ -148,9 +148,9 @@ def get_aux_encoder_params(input_channel):
     """
     The output shape will be [B, 128, H//30, W//30]
     """
-    print(f'[PoniEncoderParams] channel_count:{input_channel}')
-    return [
-        {'conv1_leaky_1': [input_channel, 8, 7, 5, 1]},
-        {'conv2_leaky_1': [8, 32, 5, 3, 1]},
-        {'conv3_leaky_1': [32, 128, 3, 2, 1]},
-    ]
+    print(f'[EncoderParams_Poni] channel_count: {input_channel}')
+    return {
+        'conv1_leaky_1': [input_channel, 8, 7, 5, 1],
+        'conv2_leaky_1': [8, 32, 5, 3, 1],
+        'conv3_leaky_1': [32, 128, 3, 2, 1],
+    }

@@ -17,7 +17,7 @@ class ForecasterPONI(nn.Module):
             setattr(self, 'rnn' + str(self.blocks - index), rnn)
             setattr(self, 'stage' + str(self.blocks - index), make_layers(params))
 
-        print(f'[{self.__class__.__name__}] TargetLen:{self._target_len}' \
+        print(f'[{self.__class__.__name__}] TargetLen:{self._target_len} ' \
             f'TeacherForcing:{self.teacher_forcing_ratio}')
 
     def forward_by_stage(self, input_data, state, subnet, rnn):

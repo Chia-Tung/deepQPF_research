@@ -130,8 +130,7 @@ class BalAdvPoniModel(LightningModule):
     def configure_optimizers(self):
         opt_g = torch.optim.Adam(
             list(self.encoder.parameters()) +
-            list(self.forecaster.parameters()) +
-            list(self.aux.parameters()),
+            list(self.forecaster.parameters()),
             lr=self.lr
         )
         opt_d = torch.optim.Adam(self.D.parameters(), lr=self.lr)
