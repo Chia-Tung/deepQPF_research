@@ -79,7 +79,7 @@ class ForecasterPONI(nn.Module):
             fcst_output.append(input_data)
         
         fcst_output = torch.stack(fcst_output) #[3, B, C, H, W]
-        assert fcst_output.shape[2] == 1, 'Finally, there should be only one channel'
+        assert fcst_output.shape[2] == 1, 'Eventually, there should be only one channel'
         return fcst_output[:, :, 0, :, :]
 
     def teacher_factor(self, ratio):

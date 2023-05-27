@@ -6,3 +6,4 @@ class StrEnum(str, Enum):
 class ModelType(StrEnum):
     CPN = 'BalancedGRUAdv'
     CPN_PONI = 'BalancedGRUAdvPONI'
+    CPN_PONI_PERSIST = 'BalancedGRUAdvPONIAtten'

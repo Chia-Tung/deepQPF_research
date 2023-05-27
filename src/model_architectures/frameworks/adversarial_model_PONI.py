@@ -10,25 +10,22 @@ from legacy.loss import get_criterion
 from legacy.analysis_utils import DiscriminatorStats
 from legacy.performance_diagram import PerformanceDiagramStable
 
-    
+
 class BalAdvPoniModel(LightningModule):
     def __init__(
-        self, adv_weight, discriminator_downsample, encoder, forecaster, ipshape, target_len,
-        loss_kwargs, checkpoint_directory
+        self, 
+        adv_weight, 
+        discriminator_downsample, 
+        encoder, 
+        forecaster, 
+        ipshape, 
+        target_len,
+        loss_kwargs, 
+        checkpoint_directory
     ):
         super().__init__()
         self.encoder = encoder
         self.forecaster = forecaster
-        ''' jeffrey add this'''
-        # for y_input use
-        self.aux = torch.nn.Sequential(
-            nn.Conv2d(1, 8, 7, 5, 1), # input C=1, only rainmap
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            nn.Conv2d(8, 32, 5, 3, 1),
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-            nn.Conv2d(32, 128, 3, 2, 1), 
-            nn.LeakyReLU(negative_slope=0.2, inplace=True),
-        )
         self._img_shape = ipshape
         self.D = Discriminator(self._img_shape, downsample=discriminator_downsample)
         self._adv_w = adv_weight
@@ -126,9 +123,9 @@ class BalAdvPoniModel(LightningModule):
         output_from_ecd = self.encoder(input_copy) # output: [3][B, n_out, H', W']
         y_0 = torch.mean(input['rain'], dim=1, keepdim=False) # y_0: [B, 1, H, W]
         tmp = [label[:, x:x+1] for x in range(0, label.size(1) - 1)]
-        y = torch.cat((y_0, *tmp), dim=1) # [B, 3, H, W]
+        y = torch.cat((y_0, *tmp), dim=1).unsqueeze(2) # [B, 3, 1, H, W]
         del tmp, y_0
-        return self.forecaster(list(output_from_ecd), y, self.aux)
+        return self.forecaster(list(output_from_ecd), y)
 
     def configure_optimizers(self):
         opt_g = torch.optim.Adam(

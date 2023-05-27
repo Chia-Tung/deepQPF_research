@@ -1,24 +1,28 @@
 # For non-given arguments, just leave it empty
 model:
-  name: BalancedGRUAdvPONI
-  teach_force: 0.5
-  adv_w: 0.01
-  dis_d: 3
-  checkpoint_dir: "/home/dong1128/deepQPF_research/checkpoint/"
+  model_config:
+    name: BalancedGRUAdvPONI
+    add_from_input: True
+    add_from_poni: False
+    add_from_atten: False
+    teach_force: 0.5
+    adv_w: 0.01
+    dis_d: 3
   loss_config:
     type:
+  checkpoint_dir: "/home/dong1128/deepQPF_research/checkpoint/"
 train_config:
   data_meta_info:
     # variable nicknames are listed in LoaderMapping
     rain:
-      path: "/work/dong1128/database/rain_rate_ten_min_nc"
-      formatter: "%Y%m%d_%H%M.nc"
+      path: "/work/dong1128/database/rain_rate_ten_min_jay"
+      formatter: "%Y%m%d_%H%M.jay"
       normalize_factor: 10
       is_inp: True
       is_oup: True
     radar:
-      path: "/work/dong1128/database/radar_2d_cropped_nc"
-      formatter: "%Y%m%d_%H%M.nc"
+      path: "/work/dong1128/database/radar_2d_cropped_jay"
+      formatter: "%Y%m%d_%H%M.jay"
       normalize_factor: 35
       is_inp: True
       is_oup: False
