@@ -9,9 +9,10 @@ from legacy.AdvPONI_hetero_from_poni import PoniModel_addponi, PoniAttenModel_ad
 from legacy.AdvPONI_hetero_from_atten import PoniModel_addatten
 
 class ModelBuilder:
-    def __init__(self, **kwarg) -> None:
+    def __init__(self, data_info, **kwarg) -> None:
+        # INPUT
         self._model_type = ModelType.from_name(kwarg['name'])
-        self._data_info = kwarg['data_info']
+        self._data_info = data_info
         self._loss_config = kwarg['loss_config']
         self._teach_force = kwarg['teach_force']
         self._adv_w = kwarg['adv_w']
@@ -25,9 +26,15 @@ class ModelBuilder:
             'w': float(1)
         }
 
+        # PROPERTY
+
+        # setup
+        self._setup()
+
         print(f'Using {ModelType.name(self._model_type)} model')
 
-    def build(self):
+    def _setup(self):
+        # encoder decoder loss_fn
         # count nc has not been implemented
         nc = sum(self._data_info['channel'].values())
         if self._model_type in [ModelType.BalancedGRUAdvPONI, ModelType.BalancedGRUAdvPONIAtten,]:
