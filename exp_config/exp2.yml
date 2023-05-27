@@ -1,6 +1,6 @@
 # For non-given arguments, just leave it empty
 model:
-  name: BalancedGRUAdvPONI
+  model_name: BalancedGRUAdvPONI
   teach_force: 0.5
   adv_w: 0.01
   dis_d: 3
