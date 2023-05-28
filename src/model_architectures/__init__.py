@@ -6,4 +6,4 @@ from src.model_architectures.forecasters.forecaster import Forecaster
 from src.model_architectures.forecasters.forecaster_poni import ForecasterPONI
 
 # Model Framework
-from src.model_architectures.frameworks.adversarial_model_PONI import BalAdvPoniModel
+from src.model_architectures.frameworks.balanced_gru_adv_poni import BalancedGRUAdvPONI

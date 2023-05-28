@@ -61,8 +61,11 @@ class BasicGRU(BasicRNN):
         """
         Args:
             inputs: Shape of [S, B, C1, H1, W1]
-            states: Shape of [N][B, C2, H2, W2]
+            states: Shape of [B, C2, H1, W1]
             seq_len: Same as the 1st dim of inputs
+        Returns:
+            outputs: Shape of [S, B, C2, H1, W1]
+            next_h: Shape of [B, C2, H1, W1]
         """
         assert seq_len is not None
         if states is None:

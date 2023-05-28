@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 BALANCING_WEIGHTS = [1, 2, 5, 10, 30]
-from legacy.loss_type import BlockAggregationMode, LossType
+from src.model_architectures.loss_fn.loss_type import BlockAggregationMode, LossType
 # from models.ssim_based_loss import NormalizedSSIMBasedLoss, SSIMBasedLoss
 
 

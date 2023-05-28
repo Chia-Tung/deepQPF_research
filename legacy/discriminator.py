@@ -1,7 +1,6 @@
 import numpy as np
 import torch.nn as nn
 
-
 class Discriminator(nn.Module):
     def __init__(self, img_shape, downsample=5):
         super().__init__()

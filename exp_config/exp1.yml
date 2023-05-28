@@ -10,6 +10,10 @@ model:
     dis_d: 3
   loss_config:
     type:
+    aggregation_mode:
+    kernel_size: 5
+    residual_loss: False
+    w: 1.0
   checkpoint_dir: "/home/dong1128/deepQPF_research/checkpoint/"
 train_config:
   data_meta_info:

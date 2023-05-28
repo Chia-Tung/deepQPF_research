@@ -4,14 +4,14 @@ from torch import nn
 from src.model_architectures.utils import make_layers, get_aux_encoder_params
 
 class ForecasterPONI(nn.Module):
-    def __init__(self, subnets, rnns, target_len, teach_prob, aux_channel):
+    def __init__(self, subnets, rnns, target_len, teach_prob, aux_encoder_params):
         super().__init__()
         assert len(subnets) == len(rnns)
 
         self.blocks = len(subnets)
         self._target_len = target_len
         self.teacher_forcing_ratio = teach_prob
-        self.aux_encoder = make_layers(get_aux_encoder_params(aux_channel))
+        self.aux_encoder = make_layers(aux_encoder_params)
 
         for index, (params, rnn) in enumerate(zip(subnets, rnns)):
             setattr(self, 'rnn' + str(self.blocks - index), rnn)
@@ -35,7 +35,7 @@ class ForecasterPONI(nn.Module):
                 of the last frame.
             aux_rainmap: Shape of [B, 3, 1, H, W]. The auxiliary rainmap data 
                 is treated as the input at "stage 3".
-            aux_data: Shape of [B, 3, C, H, W]. The auxiliary heterogeneous data 
+            aux_data: Shape of [B, C, H, W]. The auxiliary heterogeneous data 
                 is treated as the input at "stage 3".
         
         Returns:
@@ -91,7 +91,7 @@ class ForecasterPONI(nn.Module):
             fcst_hr (int): Forecast hour
             rainmap: Rain data to be fed in PONI with shape [B, 3, 1, H, W] or
                 [B, 1, H, W]
-            aux_data: Heterogeneous data to be fed in PONI with shape [B, 3, C, 
+            aux_data: Heterogeneous data to be fed in PONI with shape [B, C, 
                 H, W]
             from_realtime (bool): if the rainmap is from realtime production
 
@@ -103,8 +103,8 @@ class ForecasterPONI(nn.Module):
                 tmp = rainmap
         else:
             if not from_realtime:
-                tmp = torch.cat([rainmap[:, fcst_hr], aux_data[:, fcst_hr]], dim=1)
+                tmp = torch.cat([rainmap[:, fcst_hr], aux_data], dim=1)
             else:
-                tmp = torch.cat([rainmap, aux_data[:, fcst_hr]], dim=1)
+                tmp = torch.cat([rainmap, aux_data], dim=1)
         
         return self.aux_encoder(tmp)

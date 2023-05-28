@@ -50,4 +50,4 @@ class Encoder(nn.Module):
                 getattr(self, 'rnn' + str(i)),
             )
             hidden_states.append(state_stage)
-        return tuple(hidden_states)
+        return hidden_states
