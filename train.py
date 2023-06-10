@@ -9,7 +9,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from src.data_manager import DataManager
-from src.model_builder import ModelBuilder
+from src.model_director import ModelDirector
 
 def main():
     config_file = './exp_config/exp1.yml'
@@ -20,9 +20,8 @@ def main():
         data_meta_info=config['train_config']['data_meta_info'], 
         **config['train_config']['data_loader_params']
     )
-
-    ### the followings are lagecy code
-    model = ModelBuilder(
+    
+    model = ModelDirector(
         **config['model'],
         data_info = dm.get_data_info()
     ).build()

@@ -1,92 +1,79 @@
 import ast
-import random
-import numpy as np
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
-from typing import Dict, List
 
 from src.loader_mapping import LoaderMapping
-from src.adopted_dataset import AdoptedDataset
+from src.utils.adopted_dataset import AdoptedDataset
 from src.utils.time_util import TimeUtil
+from src.datetime_manager import DatetimeManager
 
 class DataManager(LightningDataModule):
     def __init__(
         self,
         start_date: int,
         end_date: int,
-        ratios: List[float],
-        data_meta_info: Dict[str, Dict],
+        order_by_time: bool,
+        ratios: list[float],
         input_len: int,
         output_len: int,
         output_interval: int,
-        threshold: float = None,
-        hourly_data: bool = False,
-        target_shape: str = None,
-        target_lat: List[float] = None,
-        target_lon: List[float] = None,
-        sampling_rate: int = None,
-        batch_size: int = 32,
-        num_workers: int = 4,
-        order_by_time: bool = True
+        target_lat: list[float],
+        target_lon: list[float],
+        target_shape: str,
+        threshold: float,
+        sampling_rate: int,
+        batch_size: int,
+        num_workers: int,
+        data_meta_info: dict[str, dict],
     ):
         super().__init__()
+        # hyperparameters from config
         self._start_date = TimeUtil.parse_string_to_time(str(start_date), "%Y%m%d%H%M")
         self._end_date = TimeUtil.parse_string_to_time(str(end_date), "%Y%m%d%H%M")
+        self._order_by_time = order_by_time
         self._ratios = ratios
-        self._data_meta_info = data_meta_info
         self._ilen = input_len
         self._olen = output_len
         self._oint = output_interval
-        self._threshold = threshold
-        self._hourly_data = hourly_data
-        self._target_shape = ast.literal_eval(target_shape)
         self._target_lat = target_lat
         self._target_lon = target_lon
+        self._target_shape = ast.literal_eval(target_shape)
+        self._threshold = threshold
         self._sampling_rate = sampling_rate
         self._batch_size = batch_size
         self._workers = num_workers
-        self._order_by_time = order_by_time
+        self._data_meta_info = data_meta_info
+
+        # internal property
+        self._hourly_data = None
         self._train_dataset = None
         self._valid_dataset = None
-        self._eval_dataset = None
+        self._evalu_dataset = None
+        self._datetime_maneger = DatetimeManager()
         self._setup()
 
     def _setup(self):
+        # data loaders instantiate
         self._all_loaders = LoaderMapping.get_all_loaders(self._data_meta_info)
 
-        # handle output loader
-        # NOTE: Only one output parameter is allowed.
-        # TODO: Try-catch more than one output.
-        initial_time_list = next(
-            filter(lambda x: x.is_oup, self._all_loaders)
-        ).set_start_time_list(self._olen, self._oint)
-
-        # handle input loaders
-        for single_loader in (loader for loader in self._all_loaders if loader.is_inp):
-            initial_time_list = single_loader.cross_check_start_time(initial_time_list, self._ilen)
+        # set initial time list
+        for loader in self._all_loaders:
+            self._datetime_maneger.import_time_from_loader(loader, self._ilen, self._olen, self._oint)
 
         # remove illegal datetime
-        initial_time_list = sorted(initial_time_list)
-        start_id, end_id = TimeUtil.find_start_end_index(initial_time_list, self._start_date, self._end_date)
-        initial_time_list = initial_time_list[start_id:end_id+1]
+        self._datetime_maneger.remove_illegal_time(self._start_date, self._end_date)
 
         # random split
-        # TODO: Make the dispatch more solid. Namely, seperate testing time in 
-        #       a `Constant.py` or use a rule-based dispatch algorithm.
-        if not self._order_by_time:
-            random.seed(1000)
-            random.shuffle(initial_time_list)
-        self._ratios = np.array(self._ratios) / np.array(self._ratios).sum()
-        num_train = int(len(initial_time_list) * self._ratios[0])
-        num_valid = int(len(initial_time_list) * self._ratios[1])
+        train_time, valid_time, test_time = \
+            self._datetime_maneger.random_split(self._order_by_time, self._ratios)
 
-        train_time = initial_time_list[:num_train]
-        valid_time = initial_time_list[num_train:num_train+num_valid]
-        test_time = initial_time_list[num_train+num_valid:]
-        
-        print(f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}; " + 
-            f"Validating Data Size: {len(valid_time)}; " + 
-            f"Testing Data Size: {len(test_time)}")
+        print(
+            f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}; "
+            f"Validating Data Size: {len(valid_time)}; "
+            f"Testing Data Size: {len(test_time)} \n"
+            f"Sampling Rate: {self._sampling_rate} "
+            f"Batch Size: {self._batch_size}"
+        )
 
         self._train_dataset = AdoptedDataset(
             self._ilen,
@@ -116,7 +103,7 @@ class DataManager(LightningDataModule):
             is_valid = True
         )
 
-        self._eval_dataset = AdoptedDataset(
+        self._evalu_dataset = AdoptedDataset(
             self._ilen,
             self._olen,
             self._oint,

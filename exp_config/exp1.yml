@@ -14,18 +14,18 @@ model:
     kernel_size: 5
     residual_loss: False
     w: 1.0
-  checkpoint_dir: "/home/dong1128/deepQPF_research/checkpoint/"
+  checkpoint_dir: "/wk171/handsomedong/deepQPF_research/checkpoint/"
 train_config:
   data_meta_info:
     # variable nicknames are listed in LoaderMapping
     rain:
-      path: "/work/dong1128/database/rain_rate_ten_min_jay"
+      path: "/bk2/handsomedong/deepQPF_DB/rain_rate_ten_min_jay"
       formatter: "%Y%m%d_%H%M.jay"
       normalize_factor: 10
       is_inp: True
       is_oup: True
     radar:
-      path: "/work/dong1128/database/radar_2d_cropped_jay"
+      path: "/bk2/handsomedong/deepQPF_DB/radar_2d_cropped_jay"
       formatter: "%Y%m%d_%H%M.jay"
       normalize_factor: 35
       is_inp: True
@@ -34,7 +34,8 @@ train_config:
     # all the keys are listed in the constructor of PLDataLoader
     start_date: 2015_01_01_00_00
     end_date: 2015_12_31_23_50
-    ratios: [0.6, 0.2, 0.2]
+    order_by_time: True
+    ratios: [0.6, 0.2, 0.2] # order: train/valid/evalu
     input_len: 6
     output_len: 3
     output_interval: 6
@@ -45,5 +46,3 @@ train_config:
     sampling_rate: 5
     batch_size: 64
     num_workers: 4
-    order_by_time: True
-    # testing data in constant

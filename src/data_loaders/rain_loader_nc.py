@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List
+from pathlib import Path
 from datetime import datetime, timedelta
 
 from src.data_loaders.basic_loader import BasicLoader
@@ -19,22 +20,33 @@ class RainLoaderNc(BasicLoader):
         if self._lon_range is None:
             self.set_lon_range()
 
-    def cross_check_start_time(
-        self, 
-        original_time_list: List[datetime], 
-        ilen: int
-    ) -> List[datetime]:
+    def inp_initial_time_fn(self, dt_list: list[datetime], ilen: int) -> list[datetime]:
         output_time_list = []
         input_offset = ilen - 1
-        for idx, dt in reversed(list(enumerate(self.time_list))):
+        for idx, dt in reversed(list(enumerate(dt_list))):
             if idx - input_offset < 0:
                 break
 
-            if (dt - self.time_list[idx - input_offset] == 
+            if (dt - dt_list[idx - input_offset] == 
                 timedelta(minutes=input_offset * self.GRANULARITY)):
                 output_time_list.append(dt)
-        
-        return list(set(output_time_list).intersection(set(original_time_list)))
+
+        return output_time_list
+    
+    def oup_initial_time_fn(self, dt_list: list[datetime], olen: int, oint: int) -> list[datetime]:
+        time_map = []
+        raw_idx = 0
+        target_offset = olen * oint
+        while raw_idx < len(dt_list):
+            if raw_idx + target_offset >= len(dt_list):
+                break
+
+            if (dt_list[raw_idx + target_offset] - dt_list[raw_idx]
+                == timedelta(minutes = target_offset * self.GRANULARITY)):
+                time_map.append(dt_list[raw_idx])
+
+            raw_idx += 1
+        return time_map 
     
     def load_input_data(
         self, 
@@ -43,16 +55,6 @@ class RainLoaderNc(BasicLoader):
         target_lat: List[float],
         target_lon: List[float]
     ) -> np.ndarray:
-        """
-        Args:
-            target_time (datetime): The start time of a predicted event.
-            ilen (int): Input length.
-            target_lat (List[float]): Target latitude to crop.
-            target_lon (List[float]): Target longitude to crop.
-
-        Returns: 
-            data (np.ndarray): Rain rate which has a shape of [ilen, CH, H, W].
-        """
         data = []
         for time_offset in (timedelta(minutes=self.GRANULARITY * i) for i in range(ilen-1, -1, -1)):
             past_time = target_time - time_offset
@@ -79,18 +81,6 @@ class RainLoaderNc(BasicLoader):
         target_lat: List[float], 
         target_lon: List[float]
     ) -> np.ndarray:
-        """
-        Args:
-            target_time (datetime): The start time of a predicted event.
-            olen (int): Output length.
-            oint (int): Output interval. Granularity * interval = 1 hour.
-            target_lat (List[float]): Target latitude to crop.
-            target_lon (List[float]): Target longitude to crop.
-
-        Returns: 
-            data (np.ndarray): Hourly accumulated rainfall. The shape 
-                is [olen, H, W].
-        """
         data = []
         for time_offset in (
             timedelta(minutes=self.GRANULARITY * i) for i in range(1, olen * oint + 1)):
@@ -125,22 +115,33 @@ class RainLoaderNc(BasicLoader):
         
         return data
     
-    # NOTE: There is no validation check for this function.
     def load_data_from_datetime(self, dt: datetime) -> np.ndarray:
-        file_path = self._BasicLoader__all_files[self.time_list.index(dt)]
+        file_path = self.get_filename_from_dt(dt)
         return self._reader.read(file_path, 'qperr')
     
+    # TODO: more elegant way to get lat range
     def set_lat_range(self):
-        file_path = self._BasicLoader__all_files[0]
+        file_path = self.get_filename_from_dt(datetime(2016, 1, 1, 1, 0))
         self._lat_range = self._reader.read(file_path, 'lat')
         assert np.sum(np.isin(self._lat_range, self._reader.INVALID_VALUE)) == 0, \
             f"Latitude range has invalid value in {file_path}"
 
+    # TODO: more elegant way to get lon range
     def set_lon_range(self):
-        file_path = self._BasicLoader__all_files[0]
+        file_path = self.get_filename_from_dt(datetime(2016, 1, 1, 1, 0))
         self._lon_range = self._reader.read(file_path, 'lon')
         assert np.sum(np.isin(self._lon_range, self._reader.INVALID_VALUE)) == 0, \
             f"Longitude range has invalid value in {file_path}"
 
     def set_reader(self):
         self._reader = NetcdfReader()
+
+    def get_filename_from_dt(self, dt: datetime) -> Path:
+        basename = dt.strftime(self.formatter)
+        return Path(*[
+            self.path, 
+            f"{dt.year:04d}", 
+            f"{dt.year:04d}{dt.month:02d}", 
+            f"{dt.year:04d}{dt.month:02d}{dt.day:02d}",
+            basename
+        ])

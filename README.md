@@ -6,22 +6,19 @@ Recommand to use a virtual environment like conda env
 conda update conda
 
 # create a new env for this project
-conda create --name deepQPF_research python=3.8 -y
+conda create --name deepQPF_research python=3.10 -y
 
 # turn off the auto-activate
 conda config --set auto_activate_base false
 
 # install PyTorch regarding to your CUDA driver version
-pip install torch==1.10.0+cu111 torchvision==0.11.0+cu111 torchaudio==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
-# or
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
-# install geopandas (DON'T use pip install)
-conda install geopandas -y
+pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu118
 
 # install other depandencies
 pip install -r requirement_pypi.txt
-```
 
-:bulb: If you meet the `AttributeError: module ‘distutils‘ has no attribute ‘version‘` when using the `torch.tensorboard.__init__`, please check this [solution](https://zhuanlan.zhihu.com/p/556704117).  
-:fire: If you upgrade to **PyTorch2.0**, there is an issue open talking about the `ImportError: cannot import name 'Backend' from 'torch._C._distributed_c10d' `. Please check [this](https://github.com/pytorch/pytorch/issues/94806) for a workaround solution.
+# There is no available `datatable` supporting Python 3.10 from pypi repo
+# (waiting for v1.1.0). The temporary workaround is downloading 
+# from S3 directly.
+pip install https://h2o-release.s3.amazonaws.com/datatable/dev%2Fdatatable-1.1.0a2132%2Fdatatable-1.1.0a2132-cp310-cp310-manylinux_2_12_x86_64.whl#sha256=db998c9bdba371e4bd6861282c60744c8ac0ba2c1ca1f2aa1fe1857d48f1d413
+```

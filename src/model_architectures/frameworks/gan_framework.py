@@ -13,7 +13,7 @@ from legacy.analysis_utils import DiscriminatorStats
 from legacy.performance_diagram import PerformanceDiagramStable
 
 
-class BalancedGRUAdvPONI(LightningModule):
+class GANFramework(LightningModule):
     def __init__(
         self, 
         adv_weight, 
