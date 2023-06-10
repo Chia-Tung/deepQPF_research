@@ -8,7 +8,7 @@ from collections.abc import Callable
 from src.utils.time_util import TimeUtil
 from src.data_loaders import BasicLoader
 from src.loader_mapping import LoaderMapping
-from src.black_list import BlackList
+from src.blacklist import Blacklist
 
 class DatetimeManager:
     """
@@ -17,13 +17,13 @@ class DatetimeManager:
     """
     def __init__(self):
         self.__initial_time_list = []
-        self.__black_list = []
-        self.__gray_list = []
+        self.__blacklist = []
+        self.__greylist = []
         self._train_time_list = None
         self._valid_time_list = None
         self._evalu_time_list = None
         
-        self._load_black_list()
+        self._load_blacklist()
 
     def import_time_from_loader(
         self, 
@@ -54,13 +54,13 @@ class DatetimeManager:
             self.__initial_time_list = sorted(
                 set(datetime_survivor).intersection(set(self.__initial_time_list)))
     
-    def load_black_list(self) -> None:
-        if BlackList.BLACK_LIST_PATH:
+    def load_blacklist(self) -> None:
+        if Blacklist.BLACKLIST_PATH:
             pass
 
-        if BlackList.GRAY_LIST:
-            self.__gray_list = BlackList.GRAY_LIST
-            self.__black_list.extend(self.__gray_list)
+        if Blacklist.GREYLIST:
+            self.__greylist = Blacklist.GREYLIST
+            self.__blacklist.extend(self.__greylist)
 
     def list_all_time(
         self,
@@ -87,9 +87,9 @@ class DatetimeManager:
         start_id, end_id = TimeUtil.find_start_end_index(self.__initial_time_list, start_dt, end_dt)
         self.__initial_time_list = self.__initial_time_list[start_id:end_id+1]
 
-        if self.__black_list:
+        if self.__blacklist:
             self.__initial_time_list = [
-                x for x in self.__initial_time_list if x not in self.__black_list]
+                x for x in self.__initial_time_list if x not in self.__blacklist]
             
     def random_split(self, order_by_time: bool, ratios: list[float]) -> tuple[list[datetime]]:
         """
