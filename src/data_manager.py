@@ -64,14 +64,15 @@ class DataManager(LightningDataModule):
         self._datetime_maneger.remove_illegal_time(self._start_date, self._end_date)
 
         # random split
-        train_time, valid_time, test_time = \
-            self._datetime_maneger.random_split(self._order_by_time, self._ratios)
+        self._datetime_maneger.random_split(self._order_by_time, self._ratios)
+        train_time, valid_time, test_time = self._datetime_maneger.train_time, \
+            self._datetime_maneger.valid_time, self._datetime_maneger.test_time
 
         print(
-            f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}; "
-            f"Validating Data Size: {len(valid_time)}; "
+            f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}, "
+            f"Validating Data Size: {len(valid_time)}, "
             f"Testing Data Size: {len(test_time)} \n"
-            f"Sampling Rate: {self._sampling_rate} "
+            f"[{self.__class__.__name__}] Sampling Rate: {self._sampling_rate}, "
             f"Batch Size: {self._batch_size}"
         )
 
@@ -83,7 +84,7 @@ class DataManager(LightningDataModule):
             self._target_lat,
             self._target_lon,
             initial_time_list = train_time,
-            data_loader_list = self._all_loaders,
+            data_meta_info = self._data_meta_info,
             sampling_rate = self._sampling_rate,
             threshold = self._threshold,
             is_train = True
@@ -97,7 +98,7 @@ class DataManager(LightningDataModule):
             self._target_lat,
             self._target_lon,
             initial_time_list = valid_time,
-            data_loader_list = self._all_loaders,
+            data_meta_info = self._data_meta_info,
             sampling_rate = self._sampling_rate,
             threshold = self._threshold,
             is_valid = True
@@ -111,7 +112,7 @@ class DataManager(LightningDataModule):
             self._target_lat,
             self._target_lon,
             initial_time_list = test_time,
-            data_loader_list = self._all_loaders,
+            data_meta_info = self._data_meta_info,
             sampling_rate = self._sampling_rate,
             threshold = self._threshold,
             is_test = True

@@ -14,8 +14,8 @@ class LoaderMapping(Enum):
             all_loaders.append(cls.get_single_loader(key, value))
         return all_loaders
 
-    def get_single_loader(self, key, value):
-        return self.get_loader_type(key)(**value)
+    def get_single_loader(key, value):
+        return LoaderMapping.get_loader_type(key)(**value)
     
     @classmethod
     def get_loader_type(cls, key):
@@ -24,5 +24,5 @@ class LoaderMapping(Enum):
     @classmethod
     def get_loader_nickname(cls, data_loader: BasicLoader) -> str:
         for member in cls:
-            if isinstance(data_loader, member.value):
+            if type(data_loader) == member.value:
                 return member.name

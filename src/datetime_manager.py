@@ -16,12 +16,12 @@ class DatetimeManager:
     time for training, validating and evaluation respectively.
     """
     def __init__(self):
-        self.__initial_time_list = []
-        self.__blacklist = []
-        self.__greylist = []
-        self._train_time_list = None
-        self._valid_time_list = None
-        self._evalu_time_list = None
+        self.__initial_time_list = list()
+        self.__blacklist = set()
+        self.__greylist = set()
+        self.train_time = list()
+        self.valid_time = list()
+        self.test_time = list()
         
         self._load_blacklist()
 
@@ -54,13 +54,13 @@ class DatetimeManager:
             self.__initial_time_list = sorted(
                 set(datetime_survivor).intersection(set(self.__initial_time_list)))
     
-    def load_blacklist(self) -> None:
+    def _load_blacklist(self) -> None:
         if Blacklist.BLACKLIST_PATH:
             pass
 
         if Blacklist.GREYLIST:
             self.__greylist = Blacklist.GREYLIST
-            self.__blacklist.extend(self.__greylist)
+            self.__blacklist = self.__blacklist.union(self.__greylist)
 
     def list_all_time(
         self,
@@ -91,7 +91,7 @@ class DatetimeManager:
             self.__initial_time_list = [
                 x for x in self.__initial_time_list if x not in self.__blacklist]
             
-    def random_split(self, order_by_time: bool, ratios: list[float]) -> tuple[list[datetime]]:
+    def random_split(self, order_by_time: bool, ratios: list[float]) -> None:
         """
         Two split strategies:
         1. random shuffle (not order by time)
@@ -99,24 +99,29 @@ class DatetimeManager:
         """
         # summation = 1
         ratios = np.array(ratios) / np.array(ratios).sum()
+
         if order_by_time:
             ratios = np.round(ratios * 10).astype(int)
+            chunk_size = ratios.sum()
+            time_list_array = np.array(self.__initial_time_list)
 
-            list(self.split_list(self.__initial_time_list, ratios.sum()))
-            ##### Draft #####
-
+            for i in range(chunk_size):
+                tmp = time_list_array[i::chunk_size]
+                if i < ratios[0]:
+                    self.train_time.extend(list(tmp))
+                elif i >= chunk_size-ratios[-1]:
+                    self.test_time.extend(list(tmp))
+                else:
+                    self.valid_time.extend(list(tmp))
+            self.train_time.sort()
+            self.valid_time.sort()
+            self.test_time.sort()
         else:
             random.seed(1000)
             random.shuffle(self.__initial_time_list)
             num_train = int(len(self.__initial_time_list) * ratios[0])
             num_valid = int(len(self.__initial_time_list) * ratios[1])
 
-            train_time = self.__initial_time_list[:num_train]
-            valid_time = self.__initial_time_list[num_train:num_train+num_valid]
-            test_time = self.__initial_time_list[num_train+num_valid:]
-
-        return train_time, valid_time, test_time
-    
-    def split_list(data: list[datetime], chunk_size: int):
-        for idx in range(0, len(data), chunk_size):
-            yield data[idx:idx+chunk_size]
+            self.train_time = self.__initial_time_list[:num_train]
+            self.valid_time = self.__initial_time_list[num_train:num_train+num_valid]
+            self.test_time = self.__initial_time_list[num_train+num_valid:]

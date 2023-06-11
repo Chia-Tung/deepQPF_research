@@ -16,7 +16,7 @@ class AdoptedDataset(Dataset):
         target_lat: List[float],
         target_lon: List[float],
         initial_time_list: List[datetime],
-        data_loader_list: List[BasicLoader],
+        data_meta_info: List[BasicLoader],
         sampling_rate: int,
         threshold: float, 
         is_train: bool = False,
@@ -25,7 +25,6 @@ class AdoptedDataset(Dataset):
     ):
         super().__init__()
         self._initial_time_list = initial_time_list
-        self._data_loader_list = data_loader_list # observer pattern
         self._sampling_rate = sampling_rate
         self._ilen = ilen
         self._olen = olen
@@ -34,6 +33,8 @@ class AdoptedDataset(Dataset):
         self._target_lat = target_lat
         self._target_lon = target_lon
         self._thsh = threshold
+
+        self._data_loader_list = LoaderMapping.get_all_loaders(data_meta_info)
 
     def __len__(self):
         return len(self._initial_time_list) // self._sampling_rate

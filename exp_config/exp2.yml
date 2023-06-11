@@ -1,0 +1,48 @@
+# For non-given arguments, just leave it empty
+model:
+  model_config:
+    name: BalancedGRUAdvPONI
+    add_from_input: True
+    add_from_poni: False
+    add_from_atten: False
+    teach_force: 0.5
+    adv_w: 0.01
+    dis_d: 3
+  loss_config:
+    type:
+    aggregation_mode:
+    kernel_size: 5
+    residual_loss: False
+    w: 1.0
+  checkpoint_dir: "/wk171/handsomedong/deepQPF_research/checkpoint/"
+train_config:
+  data_meta_info:
+    # variable nicknames are listed in LoaderMapping
+    rain:
+      path: "/bk2/handsomedong/deepQPF_DB/rain_rate_ten_min_jay"
+      formatter: "%Y%m%d_%H%M.jay"
+      normalize_factor: 10
+      is_inp: True
+      is_oup: True
+    radar:
+      path: "/bk2/handsomedong/deepQPF_DB/radar_2d_cropped_jay"
+      formatter: "%Y%m%d_%H%M.jay"
+      normalize_factor: 35
+      is_inp: True
+      is_oup: False
+  data_loader_params:
+    # all the keys are listed in the constructor of PLDataLoader
+    start_date: 2015_01_01_00_00
+    end_date: 2015_12_31_23_50
+    order_by_time: True
+    ratios: [0.6, 0.2, 0.2] # order: train/valid/evalu
+    input_len: 6
+    output_len: 3
+    output_interval: 6
+    target_lat: [20.125, 26.8625]
+    target_lon: [118.125, 123.3625]
+    target_shape: (540, 420)
+    threshold: 0.5
+    sampling_rate: 5
+    batch_size: 64
+    num_workers: 4
