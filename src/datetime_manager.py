@@ -56,7 +56,8 @@ class DatetimeManager:
     
     def _load_blacklist(self) -> None:
         if Blacklist.BLACKLIST_PATH:
-            pass
+            Blacklist.read_blacklist()
+            self.__blacklist = Blacklist.BLACKLIST
 
         if Blacklist.GREYLIST:
             self.__greylist = Blacklist.GREYLIST

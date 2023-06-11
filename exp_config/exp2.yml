@@ -33,7 +33,7 @@ train_config:
   data_loader_params:
     # all the keys are listed in the constructor of PLDataLoader
     start_date: 2015_01_01_00_00
-    end_date: 2015_12_31_23_50
+    end_date: 2021_12_31_23_50
     order_by_time: True
     ratios: [0.6, 0.2, 0.2] # order: train/valid/evalu
     input_len: 6

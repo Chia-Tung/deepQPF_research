@@ -4,3 +4,4 @@ netcdf4
 metpy
 tensorboard
 feather-format
+p-tqdm
