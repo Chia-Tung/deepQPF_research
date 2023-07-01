@@ -58,7 +58,7 @@ if __name__ == '__main__':
     def fn(dt: datetime) -> None:
         data = rain_loader.load_output_data(dt, 3, 6, [20, 27], [118, 123.5])
         if data.max() >= 250:
-            with open('/wk171/handsomedong/deepQPF_research/exp_config/black_list.txt', 'a') as f:
+            with open(Blacklist.BLACKLIST_PATH, 'a') as f:
                 f.write(dt.__repr__() + '\n')
 
     results = p_map(fn, time_map, **{"num_cpus": 8})

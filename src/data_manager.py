@@ -20,7 +20,6 @@ class DataManager(LightningDataModule):
         target_lat: list[float],
         target_lon: list[float],
         target_shape: str,
-        threshold: float,
         sampling_rate: int,
         batch_size: int,
         num_workers: int,
@@ -38,7 +37,6 @@ class DataManager(LightningDataModule):
         self._target_lat = target_lat
         self._target_lon = target_lon
         self._target_shape = ast.literal_eval(target_shape)
-        self._threshold = threshold
         self._sampling_rate = sampling_rate
         self._batch_size = batch_size
         self._workers = num_workers
@@ -69,11 +67,12 @@ class DataManager(LightningDataModule):
             self._datetime_maneger.valid_time, self._datetime_maneger.test_time
 
         print(
-            f"[{self.__class__.__name__}] Training Data Size: {len(train_time)}, "
-            f"Validating Data Size: {len(valid_time)}, "
-            f"Testing Data Size: {len(test_time)} \n"
-            f"[{self.__class__.__name__}] Sampling Rate: {self._sampling_rate}, "
-            f"Batch Size: {self._batch_size}"
+            f"[{self.__class__.__name__}] "
+            f"Training Data Size: {len(train_time) // self._sampling_rate}, "
+            f"Validating Data Size: {len(valid_time) // self._sampling_rate}, "
+            f"Testing Data Size: {len(test_time) // self._sampling_rate} \n"
+            f"[{self.__class__.__name__}] Image Shape: {self._target_shape}, "
+            f"Batch Size: {self._batch_size}, Sampling Rate: {self._sampling_rate}"
         )
 
         self._train_dataset = AdoptedDataset(
@@ -86,7 +85,6 @@ class DataManager(LightningDataModule):
             initial_time_list = train_time,
             data_meta_info = self._data_meta_info,
             sampling_rate = self._sampling_rate,
-            threshold = self._threshold,
             is_train = True
         )
 
@@ -100,7 +98,6 @@ class DataManager(LightningDataModule):
             initial_time_list = valid_time,
             data_meta_info = self._data_meta_info,
             sampling_rate = self._sampling_rate,
-            threshold = self._threshold,
             is_valid = True
         )
 
@@ -114,7 +111,6 @@ class DataManager(LightningDataModule):
             initial_time_list = test_time,
             data_meta_info = self._data_meta_info,
             sampling_rate = self._sampling_rate,
-            threshold = self._threshold,
             is_test = True
         )
 

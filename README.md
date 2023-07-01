@@ -22,3 +22,10 @@ pip install -r requirement_pypi.txt
 # from S3 directly.
 pip install https://h2o-release.s3.amazonaws.com/datatable/dev%2Fdatatable-1.1.0a2132%2Fdatatable-1.1.0a2132-cp310-cp310-manylinux_2_12_x86_64.whl#sha256=db998c9bdba371e4bd6861282c60744c8ac0ba2c1ca1f2aa1fe1857d48f1d413
 ```
+
+## Hyperparameters
+1. `exp_config/exp.yml`
+2. `src/blacklist.Blacklist.BLACKLIST_PATH`
+3. `set_lat_range` & `set_lon_range` in all data loaders
+4. `src/model_architectures/utils.py`
+5. `loss fn`

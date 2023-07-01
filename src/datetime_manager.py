@@ -114,9 +114,15 @@ class DatetimeManager:
                     self.test_time.extend(list(tmp))
                 else:
                     self.valid_time.extend(list(tmp))
-            self.train_time.sort()
-            self.valid_time.sort()
-            self.test_time.sort()
+            
+            #==================================================
+            # DON'T sort the time list, or the `AdoptedDataset`
+            # will sample those data in the front forever (bias).
+            #
+            # self.train_time.sort()
+            # self.valie_time.sort()
+            # self.test_time.sort()
+            #==================================================
         else:
             random.seed(1000)
             random.shuffle(self.__initial_time_list)

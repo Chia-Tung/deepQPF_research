@@ -21,7 +21,6 @@ class Discriminator(nn.Module):
         seq, batch, height, width = img.shape
         img_flat = img.view(seq * batch, -1)
         validity = self.model(img_flat)
-        validity = validity.view((seq, batch, 1))
         return validity
 
 

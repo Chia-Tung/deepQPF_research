@@ -18,7 +18,6 @@ class AdoptedDataset(Dataset):
         initial_time_list: List[datetime],
         data_meta_info: List[BasicLoader],
         sampling_rate: int,
-        threshold: float, 
         is_train: bool = False,
         is_valid: bool = False,
         is_test: bool = False,
@@ -32,7 +31,6 @@ class AdoptedDataset(Dataset):
         self._target_shape = target_shape
         self._target_lat = target_lat
         self._target_lon = target_lon
-        self._thsh = threshold
 
         self._data_loader_list = LoaderMapping.get_all_loaders(data_meta_info)
 
@@ -55,12 +53,8 @@ class AdoptedDataset(Dataset):
 
         self.shape_check(input_data_map)
         self.shape_check(output_data_map)
-        
-        # build mask
-        mask = np.zeros_like(output_data_map['rain'])
-        mask[output_data_map['rain'] > self._thsh] = 1
 
-        return input_data_map, output_data_map, mask
+        return input_data_map, output_data_map
     
     def shape_check(self, data_map: Dict[str, np.ndarray]):
         if not list(data_map.values())[0].shape[-2:] == self._target_shape:

@@ -3,7 +3,6 @@ import torch.nn as nn
 
 BALANCING_WEIGHTS = [1, 2, 5, 10, 30]
 from src.model_architectures.loss_fn.loss_type import BlockAggregationMode, LossType
-# from models.ssim_based_loss import NormalizedSSIMBasedLoss, SSIMBasedLoss
 
 
 def get_criterion(loss_kwargs):

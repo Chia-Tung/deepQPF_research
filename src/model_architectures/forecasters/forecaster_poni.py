@@ -1,7 +1,7 @@
 import torch, random
 from torch import nn
 
-from src.model_architectures.utils import make_layers, get_aux_encoder_params
+from src.model_architectures.utils import make_layers
 
 class ForecasterPONI(nn.Module):
     def __init__(self, subnets, rnns, target_len, teach_prob, aux_encoder_params):
@@ -9,7 +9,7 @@ class ForecasterPONI(nn.Module):
         assert len(subnets) == len(rnns)
 
         self.blocks = len(subnets)
-        self._target_len = target_len
+        self.target_len = target_len
         self.teacher_forcing_ratio = teach_prob
         self.aux_encoder = make_layers(aux_encoder_params)
 
@@ -17,7 +17,7 @@ class ForecasterPONI(nn.Module):
             setattr(self, 'rnn' + str(self.blocks - index), rnn)
             setattr(self, 'stage' + str(self.blocks - index), make_layers(params))
 
-        print(f'[{self.__class__.__name__}] TargetLen:{self._target_len} ' \
+        print(f'[{self.__class__.__name__}] TargetLen:{self.target_len} ' \
             f'TeacherForcing:{self.teacher_forcing_ratio}')
 
     def forward_by_stage(self, input_data, state, subnet, rnn):
@@ -47,7 +47,7 @@ class ForecasterPONI(nn.Module):
         fcst_output = []
         run_teacher = self.teacher_factor(self.teacher_forcing_ratio)
 
-        for fcst_num in range(self._target_len):
+        for fcst_num in range(self.target_len):
             for stage_num in range(self.blocks, 0, -1): # GRU_layers
                 if stage_num == self.blocks:
                     if not run_teacher and fcst_num != 0:
@@ -94,7 +94,8 @@ class ForecasterPONI(nn.Module):
             aux_data: Heterogeneous data to be fed in PONI with shape [B, C, 
                 H, W]
             from_realtime (bool): if the rainmap is from realtime production
-
+        Returns:
+            data with shape of [B, C(128), H//30, W//30]
         """
         if aux_data is None:
             if not from_realtime:

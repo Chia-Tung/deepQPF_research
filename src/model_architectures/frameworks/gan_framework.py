@@ -6,9 +6,8 @@ from typing import Dict
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning import LightningModule
 
-from legacy.running_average import RunningAverage
-from legacy.discriminator import Discriminator
-from legacy.loss import get_criterion
+from src.utils.running_average import RunningAverage
+
 from legacy.analysis_utils import DiscriminatorStats
 from legacy.performance_diagram import PerformanceDiagramStable
 
@@ -29,27 +28,30 @@ class GANFramework(LightningModule):
         super().__init__()
         self.encoder = encoder
         self.forecaster = forecaster
-        self.discriminator = Discriminator(ipshape, downsample=disc_d)
-        self._disc_weight = adv_weight
-        self._target_len = target_len
-        self._loss_type = loss_kwargs['type']
-        self._ckp_dir = checkpoint_directory
-        self._loss_fn = get_criterion(loss_kwargs)
+        self.discriminator = discriminator
+        self.loss_fn = loss_fn
+        self.dis_loss_fn = dis_loss_fn
+        #
         self._add_from_poni = add_hetr_from_poni
-
-        self.lr = 1e-04
-        self._recon_loss = RunningAverage()
-        self._GD_loss = RunningAverage()
-        self._G_loss = RunningAverage()
-        self._D_loss = RunningAverage()
-        self._label_smoothing_alpha = 0.001
-        self._val_criterion = PerformanceDiagramStable()
-        self._D_stats = DiscriminatorStats()
+        self._lr = learning_rate
+        self._target_len = target_len
+        self._adv_w = adv_weight
+        #
+        self.loss_P = RunningAverage()
+        self.loss_GD = RunningAverage()
+        self.loss_G = RunningAverage()
+        self.loss_D = RunningAverage()
+        #
         self.automatic_optimization = False
         self.validation_step_outputs = []
 
+
+        self._ckp_dir = checkpoint_directory
+
+        self._val_criterion = PerformanceDiagramStable()
+        self._D_stats = DiscriminatorStats()
+
         # save hyperparameter
-        print(f'[{self.__class__.__name__} Disc_Weight:{self._disc_weight}] Ckp:{self._ckp_dir}')
 
     def forward(self, input_data: Dict[str, np.ndarray], label: Dict[str, np.ndarray]):
         """
@@ -62,8 +64,6 @@ class GANFramework(LightningModule):
         Return:
             output: rainfall predictions of shape [Seq, Batch, Height, Width]
         """
-        label = label['rain']
-
         # prepare auxiliary data
         rainfall_previous_hr = torch.mean(input_data['rain'], dim=1, keepdim=False)
         aux_rainmap = torch.cat([rainfall_previous_hr, label[:, :self._target_len-1]], dim=1)
@@ -83,46 +83,61 @@ class GANFramework(LightningModule):
     
     def configure_optimizers(self):
         opt_g = torch.optim.Adam(
-            list(self.encoder.parameters())+list(self.forecaster.parameters()),lr=self.lr)
-        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr)
+            list(self.encoder.parameters()) + list(self.forecaster.parameters()),
+            lr=self._lr
+        )
+        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=self._lr)
         return opt_g, opt_d
     
-    def training_step(self, batch, batch_idx):
-        inp_data, label, mask = batch
-        optimizer_g, optimizaer_d = self.optimizers() # return optimizers from `configure_optimizers`
-        batch_size = inp_data['rain'].shape[0]
+    def training_step(self, batch):
+        # data from torch.data.Dataloader will be automatically turned into tensor in batch
+        inp_data, label = batch
+        label = label['rain']
+        batch_size = label.shape[0]
+
+        # get optimizers from `configure_optimizers`
+        optimizer_g, optimizaer_d = self.optimizers()
 
         # train generator
-        self.toggle_optimizer(optimizer_g)
-        loss_dict = self.generator_loss(inp_data, label, mask)
-        self._recon_loss.add(loss_dict['progress_bar']['recon_loss'].item() * batch_size, batch_size)
-        self._GD_loss.add(loss_dict['progress_bar']['adv_loss'].item() * batch_size, batch_size)
-        self._G_loss.add(loss_dict['loss'].item() * batch_size, batch_size)
-        self.log('G', self._G_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
-        self.log('GRecon', self._recon_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
-        self.log('GD', self._GD_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
-        self.manual_backward(loss_dict['loss'])
+        self.toggle_optimizer(optimizer_g) # requires_grad=True
+        loss_dict = self.generator_loss(inp_data, label, batch_size)
+        self.loss_P.add(loss_dict['progress_bar']['loss_pred'].item() * batch_size, batch_size)
+        self.loss_GD.add(loss_dict['progress_bar']['loss_gd'].item() * batch_size, batch_size)
+        self.loss_G.add(loss_dict['total_loss'].item() * batch_size, batch_size)
+        self.log('loss_G', self.loss_G.get(), on_step=True, on_epoch=True, prog_bar=True)
+        self.log('loss_P', self.loss_P.get(), on_step=True, on_epoch=True, prog_bar=True)
+        self.log('loss_GD', self.loss_GD.get(), on_step=True, on_epoch=True, prog_bar=True)
+        self.manual_backward(loss_dict['total_loss'])
         optimizer_g.step()
         optimizer_g.zero_grad()
         self.untoggle_optimizer(optimizer_g)
 
         # train discriminator
         self.toggle_optimizer(optimizaer_d)
-        loss_dict = self.discriminator_loss(inp_data, label)
-        self._D_loss.add(loss_dict['loss'].item() * batch_size, batch_size)
-        self.log('D', self._D_loss.get(), on_step=True, on_epoch=True, prog_bar=True)
-        self.manual_backward(loss_dict['loss'] * self._adv_w)
+        loss_dict = self.discriminator_loss(loss_dict['prediction'], label, batch_size)
+        self.loss_D.add(loss_dict['loss_d'].item() * batch_size, batch_size)
+        self.log('loss_D', self.loss_D.get(), on_step=True, on_epoch=True, prog_bar=True)
+        self.manual_backward(loss_dict['loss_d'] * self._adv_w)
         optimizaer_d.step()
         optimizaer_d.zero_grad()
         self.untoggle_optimizer(optimizaer_d)
 
-    def validation_step(self, batch, batch_idx):
-        val_data, val_label, val_mask = batch
+    def training_epoch_end(self):
+        self.loss_G.reset()
+        self.loss_GD.reset()
+        self.loss_P.reset()
+        self.loss_D.reset()
+        self._D_stats.reset()
+
+    def validation_step(self, batch):
+        inp_data, label = batch
+        label = label['rain']
+        batch_size = label.shape[0]
+
         # generator
-        loss_dict = self.generator_loss(val_data, val_label, val_mask)
+        loss_dict = self.generator_loss(inp_data, label, batch_size)
         aligned_prediction = loss_dict['prediction'].permute(1, 0, 2, 3)
-        val_label = val_label['rain']
-        self._val_criterion.compute(aligned_prediction, val_label)
+        self._val_criterion.compute(aligned_prediction, label)
 
         # Discriminator stats
         pos = self.D(val_label)
@@ -155,68 +170,45 @@ class GANFramework(LightningModule):
         self.log('pdsr', pdsr)
         self.validation_step_outputs.clear()
 
-        self._G_loss.reset()
-        self._GD_loss.reset()
-        self._recon_loss.reset()
-        self._D_loss.reset()
-        self._D_stats.reset()
-
-    def training_epoch_end(self):
-        self._G_loss.reset()
-        self._GD_loss.reset()
-        self._recon_loss.reset()
-        self._D_loss.reset()
+        self.loss_G.reset()
+        self.loss_GD.reset()
+        self.loss_P.reset()
+        self.loss_D.reset()
         self._D_stats.reset()
     
-    def generator_loss(self, input_data, label, mask):
+    def generator_loss(self, input_data, label, batch_size):
         # Loss_prediction
-        reconstruction = self(input_data, label)
-        recons_loss = self._loss_fn(reconstruction, label['rain'], mask)
+        prediction = self(input_data, label)
+        loss_pred = self.loss_fn(prediction, label)
 
         # Loss_generator_discriminator
-        N = self._target_len * label['rain'].size(0)
-        valid = torch.ones(N, 1)
-        valid = valid.type_as(label['rain'])
         # ReLU is used since generator fools discriminator with -ve values
-        disc_guess = self.discriminator(nn.ReLU()(reconstruction))
-        adv_loss = self.adversarial_loss_fn(disc_guess.view(N, 1), valid, smoothing=False)
+        disc_guess = self.discriminator(nn.ReLU()(prediction))
+        disc_loss = self.dis_loss_fn(
+            disc_guess, torch.ones([self._target_len * batch_size, 1]).type_as(label))
 
-        # Loss_generator
-        loss = adv_loss * self._adv_w + recons_loss * (1 - self._adv_w)
-        tqdm_dict = {'recon_loss': recons_loss, 'adv_loss': adv_loss}
-        output = {'loss': loss, 'progress_bar': tqdm_dict, 'prediction': reconstruction}
-        return output
+        # Loss_generator = Loss_prediction + Loss_generator_discriminator
+        total_loss = disc_loss * self._adv_w + loss_pred * (1 - self._adv_w)
+        tqdm_dict = {'loss_pred': loss_pred, 'loss_gd': disc_loss}
+        ret = {'total_loss': total_loss, 'progress_bar': tqdm_dict, 'prediction': prediction}
+        return ret
     
-    def discriminator_loss(self, input_data, label):
-        N = self._target_len * label['rain'].size(0)
-
+    def discriminator_loss(self, prediction, label, batch_size):
         # how well can it recognize reality?
-        valid = torch.ones(N, 1)
-        valid = valid.type_as(label['rain'])
-        disc_guess = self.discriminator(label['rain'])
-        real_loss = self.adversarial_loss_fn(disc_guess.view(N, 1), valid)
+        disc_guess = self.discriminator(label)
+        real_loss = self.adversarial_loss_fn(
+            disc_guess, torch.ones([self._target_len * batch_size, 1]).type_as(label))
 
         # how well can it label as fake?
-        predicted_reconstruction = self(input_data, label)
-        fake = torch.zeros(N, 1)
-        fake = fake.type_as(label['rain'])
         # ReLU is used since generator fools discriminator with -ve values
-        disc_guess = self.discriminator(nn.ReLU()(predicted_reconstruction.detach()))
-        fake_loss = self.adversarial_loss_fn(disc_guess.view(N, 1), fake)
+        disc_guess = self.discriminator(nn.ReLU()(prediction.detach()))
+        fake_loss = self.adversarial_loss_fn(
+            disc_guess, torch.zeros([self._target_len * batch_size, 1]).type_as(label))
 
         # discriminator loss is the average of these
-        d_loss = (real_loss + fake_loss) / 2
-        tqdm_dict = {'d_loss': d_loss}
-        output = {'loss': d_loss, 'progress_bar': tqdm_dict}
-        return output
-    
-    def adversarial_loss_fn(self, y_hat, y, smoothing=True):
-        uniq_y = torch.unique(y)
-        assert len(uniq_y) == 1
-        if smoothing:
-            # one sided smoothing.
-            y = y * (1 - self._label_smoothing_alpha)
-        return nn.BCELoss()(y_hat, y)
+        loss_d = (real_loss + fake_loss) / 2
+        ret = {'loss_d': loss_d}
+        return ret
     
     def get_checkpoint_callback(self):
         return ModelCheckpoint(

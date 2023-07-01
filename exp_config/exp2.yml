@@ -2,18 +2,13 @@
 model:
   model_config:
     name: BalancedGRUAdvPONI
-    add_from_input: True
-    add_from_poni: False
-    add_from_atten: False
-    teach_force: 0.5
-    adv_w: 0.01
-    dis_d: 3
+    add_hetr_from_poni: False
+    teach_forcing_ratio: 0.5
+    discriminator_downsample: 3
   loss_config:
-    type:
-    aggregation_mode:
-    kernel_size: 5
-    residual_loss: False
-    w: 1.0
+    type: WeightedMAE
+    adversarial_weight: 0.01
+    learning_rate: 0.0001
   checkpoint_dir: "/wk171/handsomedong/deepQPF_research/checkpoint/"
 train_config:
   data_meta_info:
@@ -35,14 +30,13 @@ train_config:
     start_date: 2015_01_01_00_00
     end_date: 2021_12_31_23_50
     order_by_time: True
-    ratios: [0.6, 0.2, 0.2] # order: train/valid/evalu
+    ratios: [3, 1, 1] # order: train/valid/evalu
     input_len: 6
     output_len: 3
     output_interval: 6
     target_lat: [20.125, 26.8625]
     target_lon: [118.125, 123.3625]
     target_shape: (540, 420)
-    threshold: 0.5
-    sampling_rate: 5
+    sampling_rate: 3
     batch_size: 64
     num_workers: 4
