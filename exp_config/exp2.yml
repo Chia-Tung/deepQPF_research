@@ -4,9 +4,11 @@ model:
     name: BalancedGRUAdvPONI
     add_hetr_from_poni: False
     teach_forcing_ratio: 0.5
-    discriminator_downsample: 3
+    discriminator_downsample: 5
   loss_config:
     type: WeightedMAE
+    balance_weight: [1, 2, 5, 10, 30]
+    balance_threshold: 0.5
     adversarial_weight: 0.01
     learning_rate: 0.0001
   checkpoint_dir: "/wk171/handsomedong/deepQPF_research/checkpoint/"
@@ -28,7 +30,7 @@ train_config:
   data_loader_params:
     # all the keys are listed in the constructor of PLDataLoader
     start_date: 2015_01_01_00_00
-    end_date: 2021_12_31_23_50
+    end_date: 2015_12_31_23_50
     order_by_time: True
     ratios: [3, 1, 1] # order: train/valid/evalu
     input_len: 6
@@ -38,5 +40,5 @@ train_config:
     target_lon: [118.125, 123.3625]
     target_shape: (540, 420)
     sampling_rate: 3
-    batch_size: 64
+    batch_size: 8
     num_workers: 4

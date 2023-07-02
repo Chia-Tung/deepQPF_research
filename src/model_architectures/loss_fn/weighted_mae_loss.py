@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 
-BALANCING_WEIGHTS = [1, 2, 5, 10, 30]
-THRESHOLD = 0.5
-
 class WeightedMaeLossPixel(nn.Module):
-    def __init__(self, boundary_bbox=None):
+    def __init__(self, weights, threshold=0, boundary_bbox=None):
         super().__init__()
+        self.balancing_weights = weights
+        self.threshold = threshold
         self._bbox = boundary_bbox
         if self._bbox is not None:
             print(f'[{self.__class__.__name__}] Bbox:{self._bbox}')
@@ -18,14 +17,14 @@ class WeightedMaeLossPixel(nn.Module):
         # batch_size, seq_len,height, width
         predicted = predicted.permute(1, 0, 2, 3)
 
-        weights = compute_weights(target, mask)
+        weights = compute_weights(target, mask, self.balancing_weights)
         return weights * (torch.abs((predicted - target)))
 
 class WeightedMaeLoss(WeightedMaeLossPixel):
     def forward(self, predicted, target):
         # build mask
         mask = torch.zeros_like(target)
-        mask[target > THRESHOLD] = 1
+        mask[target > self.threshold] = 1
 
         return torch.mean(super().forward(predicted, target, mask))
     
@@ -37,7 +36,7 @@ def ignore_boundary(bbox, predicted, target, mask):
     mask = mask[..., xl:Nx - xr, yl:Ny - yr]
     return predicted, target, mask
 
-def compute_weights(target, mask):
+def compute_weights(target, mask, BALANCING_WEIGHTS=[1, 2, 5, 10, 30]):
     weights = torch.ones_like(mask) * BALANCING_WEIGHTS[0]
     for i, threshold in enumerate(BALANCING_WEIGHTS):
         if i == 0:

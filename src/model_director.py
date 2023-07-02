@@ -1,4 +1,4 @@
-from src.model_type import ModelType
+from src.model_architectures.model_type import ModelType
 from src.model_architectures import BalancedGRUAdvPoniBuilder
 
 class ModelDirector:

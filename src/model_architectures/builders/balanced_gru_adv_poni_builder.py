@@ -17,16 +17,17 @@ class BalancedGRUAdvPoniBuilder:
         Adv: GAN framework
         Poni: Accessory adopted from Seq2Seq model
         """
-        self._dis_d = model_config['discriminator_downsample']
+        # model config
         self._from_poni = model_config['add_hetr_from_poni']
         self._tf = model_config['teach_forcing_ratio']
-        self._lr = loss_config['learning_rate']
+        self._dis_d = model_config['discriminator_downsample']
+        # loss config
         self._loss_type = loss_config['type']
-        self._adv_w = model_config['adversarial_weight']
-        self._aggregation = loss_config['aggregation_mode']
-        self._loss_kernel_size = loss_config['kernel_size']
-        self._residual_loss = loss_config['residual_loss']
-        self._loss_weight = loss_config['w']
+        self._bal_w = loss_config['balance_weight']
+        self._bal_thsh = loss_config['balance_threshold']
+        self._adv_w = loss_config['adversarial_weight']
+        self._lr = loss_config['learning_rate']
+        # others
         self._data_info = data_info
         self._checkpoint_dir = checkpoint_dir
 
@@ -92,7 +93,7 @@ class BalancedGRUAdvPoniBuilder:
         self, 
         loss_type: str
     ) -> BalancedGRUAdvPoniBuilder:
-        self._loss_fn = LossType[loss_type].value()
+        self._loss_fn = LossType[loss_type].value(self._bal_w, threshold=self._bal_thsh)
         return self
     
     def prepare_dis_loss_fn(self) -> BalancedGRUAdvPoniBuilder:
@@ -101,14 +102,17 @@ class BalancedGRUAdvPoniBuilder:
     
     def build(self):
         return self._framework(
+            # models
             self._encoder,
             self._forecaster,
             self._discriminator,
             self._loss_fn,
             self._dis_loss_fn,
-
+            # scalars
             self._from_poni,
             self._lr,
             self._data_info['olen'],
             self._adv_w,
+            # checkpoint
+            self._checkpoint_dir
         )

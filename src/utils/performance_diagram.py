@@ -1,8 +1,64 @@
 import numpy as np
 import torch
 
-from legacy.analysis_utils import batch_CSI, batch_HSS, batch_precision, batch_recall
+def _compute_custom_metric(prediction, target, func):
+    # batch,pixels
+    assert len(prediction.shape) == 2
+    tp = torch.logical_and(target, target == prediction)
+    fp = torch.logical_and(~target, prediction)
+    tn = torch.logical_and(~target, target == prediction)
+    fn = torch.logical_and(target, ~prediction)
+    # 1 value per entry in batch
+    tp = torch.sum(tp, axis=1).float()
+    fp = torch.sum(fp, axis=1).float()
+    tn = torch.sum(tn, axis=1).float()
+    fn = torch.sum(fn, axis=1).float()
 
+    return func(tp, tn, fp, fn)
+
+def _compute_CSI(tp, tn, fp, fn):
+    return tp / (tp + fn + fp)
+
+def _compute_HSS(tp, tn, fp, fn):
+    num = tp * tn - fn * fp
+    den = (tp + fn) * (fn + tn) + (tp + fp) * (fp + tn)
+    return num / den
+
+def batch_CSI(prediction, target):
+    return _compute_custom_metric(prediction, target, _compute_CSI)
+
+def batch_HSS(prediction, target):
+    return _compute_custom_metric(prediction, target, _compute_HSS)
+
+def batch_precision(prediction, target):
+    """
+    -1e6 is set to those entries where not a single target is 1.
+    """
+    tp = torch.logical_and(target, target == prediction)
+    fp = torch.logical_and(~target, prediction)
+    tp = torch.sum(tp, axis=1)
+    fp = torch.sum(fp, axis=1)
+    precision = -1e6 * tp.new_ones(tp.shape[0])
+    N = torch.sum(target, axis=1)
+    # NOTE: that tp + fp can still be zero. so there can be some nan entries. It is kept this way to ensure that
+    # output of batch_precision and batch_recall are aligned and therefore also of same dimension
+    invalid_mask = N == 0
+    precision[~invalid_mask] = torch.true_divide(tp[~invalid_mask], (tp + fp)[~invalid_mask])
+    precision[torch.isnan(precision)] = 0
+
+    return precision
+
+def batch_recall(prediction, target):
+    """
+    -1e6 is set to those entries where not a single target is 1.
+    """
+    tp = torch.logical_and(target, target == prediction)
+    tp = torch.sum(tp, axis=1)
+    N = torch.sum(target, axis=1)
+    invalid_mask = N == 0
+    recall = -1e6 * tp.new_ones(tp.shape[0])
+    recall[~invalid_mask] = torch.true_divide(tp[~invalid_mask], N[~invalid_mask])
+    return recall
 
 class PerformanceDiagram:
     """
@@ -76,7 +132,7 @@ class PerformanceDiagramStable(PerformanceDiagram):
     """
     Here, we aggregate the Probablity of detection and Success ratio over all batches. This was needed as there are a
     lot of frames for which the target has no significant non-zero entry. So, computing the metric for every batch and
-     then averaging it over all batches results in a very unstable metric.
+    then averaging it over all batches results in a very unstable metric.
     """
 
     def __init__(self, thresholds=None, weights=None):
@@ -159,49 +215,3 @@ class PerformanceDiagramStable(PerformanceDiagram):
         self._sr = {t: [] for t in self._tlist}
         self._csi = {t: [] for t in self._tlist}
         self._hss = {t: [] for t in self._tlist}
-
-
-class PerformanceDiagram2(PerformanceDiagramStable):
-    def binarize(self, prediction, target, threshold):
-        factor = threshold * 0.1
-        lt = threshold - factor
-        gt = threshold + factor
-        target = torch.logical_and(target >= lt, target <= gt)
-        prediction = torch.logical_and(prediction >= lt, prediction <= gt)
-        return (prediction, target)
-
-
-def generate_thresholds(end, fraction):
-    assert fraction < 1
-    assert fraction > 0
-    t = 1
-    t_list = []
-    while t < end:
-        t_list.append(t)
-        tlow = (1 + fraction) * t
-        #     print(t,tlow)
-        t = tlow / (1 - fraction)
-    t_list.append(t)
-    return t_list
-
-
-class PerformanceDiagram3(PerformanceDiagramStable):
-    def __init__(self, end, fraction):
-        super().__init__(thresholds=generate_thresholds(end, fraction))
-        self._fraction = fraction
-
-    def binarize(self, prediction, target, threshold):
-        factor = threshold * self._fraction
-        if threshold == min(self._tlist):
-            lt = 0
-        else:
-            lt = threshold - factor
-
-        if threshold == max(self._tlist):
-            gt = threshold + 1000
-        else:
-            gt = threshold + factor
-
-        target = torch.logical_and(target >= lt, target < gt)
-        prediction = torch.logical_and(prediction >= lt, prediction < gt)
-        return (prediction, target)
