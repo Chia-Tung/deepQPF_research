@@ -1,9 +1,11 @@
 from enum import Enum
 
+
 class StrEnum(str, Enum):
     pass
 
+
 class ModelType(StrEnum):
-    CPN = 'BalancedGRUAdv'
-    CPN_PONI = 'BalancedGRUAdvPONI'
-    CPN_PONI_PERSIST = 'BalancedGRUAdvPONIAtten'
+    CAPN = "BalancedGRUAdv"
+    CAPN_PONI = "BalancedGRUAdvPONI"
+    CAPN_PONI_PERSIST = "BalancedGRUAdvPONIAtten"

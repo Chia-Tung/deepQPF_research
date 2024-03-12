@@ -1,10 +1,11 @@
-import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Union
 
+import numpy as np
+
+from src.data_loaders.rain_loader_nc import RainLoaderNc
 from src.file_readers.jay_reader import JayReader
 from src.file_readers.netcdf_reader import NetcdfReader
-from src.data_loaders.rain_loader_nc import RainLoaderNc
 from src.utils.crop_util import CropUtil
 
 
@@ -18,24 +19,24 @@ class RainLoaderJay(RainLoaderNc):
         if self._reader == None:
             self.set_reader()
 
-    # TODO: remove the specific path 
+    # TODO: remove the specific path
     def set_lat_range(self):
         file_path = self.get_filename_from_dt(datetime(2016, 1, 1, 1, 0))
-        nc_file_path = str(file_path).replace('jay', 'nc')
-        self._lat_range = NetcdfReader().read(nc_file_path, 'lat')
+        nc_file_path = str(file_path).replace("jay", "nc")
+        self._lat_range = NetcdfReader().read(nc_file_path, "lat")
 
-    # TODO: remove the specific path 
+    # TODO: remove the specific path
     def set_lon_range(self):
         file_path = self.get_filename_from_dt(datetime(2016, 1, 1, 1, 0))
-        nc_file_path = str(file_path).replace('jay', 'nc')
-        self._lon_range = NetcdfReader().read(nc_file_path, 'lon')
+        nc_file_path = str(file_path).replace("jay", "nc")
+        self._lon_range = NetcdfReader().read(nc_file_path, "lon")
 
     def set_reader(self):
-        self._reader = JayReader(
-            self._lon_range.size, self._lat_range.size
-        )
+        self._reader = JayReader(self._lon_range.size, self._lat_range.size)
 
-    def load_data_from_datetime(self, dt: Union[List[datetime], datetime]) -> np.ndarray:
+    def load_data_from_datetime(
+        self, dt: Union[List[datetime], datetime]
+    ) -> np.ndarray:
         """
         Returns:
             3D array with shape of [ilen, H, W]
@@ -51,11 +52,11 @@ class RainLoaderJay(RainLoaderNc):
             raise RuntimeError("datetime type is not supported.")
 
     def load_input_data(
-        self, 
-        target_time: datetime, 
+        self,
+        target_time: datetime,
         ilen: int,
         target_lat: List[float],
-        target_lon: List[float]
+        target_lon: List[float],
     ) -> np.ndarray:
         array_data = self.load_data_from_datetime(
             [target_time - timedelta(minutes=self.GRANULARITY * 5), target_time]
@@ -70,19 +71,21 @@ class RainLoaderJay(RainLoaderNc):
         array_data /= self._BasicLoader__FACTOR
 
         return array_data[:, None]
-    
+
     def load_output_data(
-        self, 
-        target_time: datetime, 
-        olen: int, 
-        oint: int, 
-        target_lat: List[float], 
-        target_lon: List[float]
+        self,
+        target_time: datetime,
+        olen: int,
+        oint: int,
+        target_lat: List[float],
+        target_lon: List[float],
     ) -> np.ndarray:
-        array_data = self.load_data_from_datetime([
-            target_time + timedelta(minutes=self.GRANULARITY * 1), 
-            target_time + timedelta(minutes=self.GRANULARITY * olen * oint)
-            ])
+        array_data = self.load_data_from_datetime(
+            [
+                target_time + timedelta(minutes=self.GRANULARITY * 1),
+                target_time + timedelta(minutes=self.GRANULARITY * olen * oint),
+            ]
+        )
         # handle negative value
         array_data[array_data < 0] = 0
         # handle shape
@@ -96,7 +99,8 @@ class RainLoaderJay(RainLoaderNc):
 
         # invalid check
         if np.max(output_data) >= self._MAX_RAIN_ACCU:
-            raise RuntimeError (
-                f"[{self.__class__.__name__}] Invalid quantity when loading {target_time}")
-        
+            raise RuntimeError(
+                f"[{self.__class__.__name__}] Invalid quantity when loading {target_time}"
+            )
+
         return output_data

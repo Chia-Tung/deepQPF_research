@@ -3,6 +3,7 @@ from torch import nn
 
 from src.model_architectures.basic_rnn import BasicRNN
 
+
 class BasicGRU(BasicRNN):
     def __init__(
         self,
@@ -16,7 +17,7 @@ class BasicGRU(BasicRNN):
         i2h_pad=(1, 1),
         h2h_kernel=(5, 5),
         h2h_dilate=(1, 1),
-        act_type=nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        act_type=nn.LeakyReLU(negative_slope=0.2, inplace=True),
     ):
         super().__init__(
             num_filter=num_filter,
@@ -27,7 +28,8 @@ class BasicGRU(BasicRNN):
             i2h_pad=i2h_pad,
             i2h_stride=i2h_stride,
             act_type=act_type,
-            prefix='SimpleGRU')
+            prefix="SimpleGRU",
+        )
         self._L = L
         self._zoneout = zoneout
 
@@ -38,9 +40,10 @@ class BasicGRU(BasicRNN):
             kernel_size=self._i2h_kernel,
             stride=self._i2h_stride,
             padding=self._i2h_pad,
-            dilation=self._i2h_dilate)
+            dilation=self._i2h_dilate,
+        )
 
-        # NOTE: Parameters from `get_encoder_params_GRU` and 
+        # NOTE: Parameters from `get_encoder_params_GRU` and
         #       `get_forecaster_params_GRU` are not used here.
         self.h2h = nn.Conv2d(
             in_channels=self._num_filter,
@@ -53,10 +56,10 @@ class BasicGRU(BasicRNN):
 
     # shape of inputs: [S, B, C, H, W]
     def forward(
-        self, 
-        inputs=None, 
-        states=None, 
-        seq_len=None, 
+        self,
+        inputs=None,
+        states=None,
+        seq_len=None,
     ):
         """
         Args:
@@ -72,8 +75,13 @@ class BasicGRU(BasicRNN):
             # NOTE: The `state_height` and `state_width` are the shape after
             #       passing through the cnn block of `i2h`
             states = torch.zeros(
-                (inputs.size(1), self._num_filter, self._state_height, self._state_width), 
-                dtype=torch.float
+                (
+                    inputs.size(1),
+                    self._num_filter,
+                    self._state_height,
+                    self._state_width,
+                ),
+                dtype=torch.float,
             )
             states = states.type_as(inputs)
 
@@ -91,7 +99,9 @@ class BasicGRU(BasicRNN):
             if inputs is not None:
                 reset_gate = torch.sigmoid(i2h_slice[0][i, ...] + h2h_slice[0])
                 update_gate = torch.sigmoid(i2h_slice[1][i, ...] + h2h_slice[1])
-                new_mem = self._act_type(i2h_slice[2][i, ...] + reset_gate * h2h_slice[2])
+                new_mem = self._act_type(
+                    i2h_slice[2][i, ...] + reset_gate * h2h_slice[2]
+                )
             else:
                 reset_gate = torch.sigmoid(h2h_slice[0])
                 update_gate = torch.sigmoid(h2h_slice[1])

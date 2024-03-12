@@ -1,6 +1,7 @@
 import numpy as np
 import torch.nn as nn
 
+
 class Discriminator(nn.Module):
     def __init__(self, img_shape, downsample=5):
         super().__init__()
@@ -14,7 +15,7 @@ class Discriminator(nn.Module):
             nn.Linear(128, 1),
             nn.Sigmoid(),
         )
-        print(f'[{self.__class__.__name__}] Downsample:{self._dsz}')
+        print(f"[{self.__class__.__name__}] Downsample: {self._dsz}")
 
     def forward(self, img):
         img = self._downsample(img)
@@ -43,7 +44,7 @@ class Discriminator2(nn.Module):
             nn.Linear(128, 1),
             nn.Sigmoid(),
         )
-        print(f'[{self.__class__.__name__}] Downsample:{self._dsz}')
+        print(f"[{self.__class__.__name__}] Downsample:{self._dsz}")
 
     def forward(self, img):
         seq, batch, height, width = img.shape
@@ -86,7 +87,7 @@ class Discriminator3(nn.Module):
             nn.Linear(128, 1),
             nn.Sigmoid(),
         )
-        print(f'[{self.__class__.__name__}] Downsample:{self._dsz}')
+        print(f"[{self.__class__.__name__}] Downsample:{self._dsz}")
 
     def forward(self, img):
         seq, batch, height, width = img.shape
@@ -118,7 +119,7 @@ class Discriminator4(nn.Module):
             nn.Linear(128, 1),
             nn.Sigmoid(),
         )
-        print(f'[{self.__class__.__name__}] Downsample:{self._dsz}')
+        print(f"[{self.__class__.__name__}] Downsample:{self._dsz}")
 
     def forward(self, img):
         seq, batch, height, width = img.shape

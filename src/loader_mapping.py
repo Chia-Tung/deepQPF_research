@@ -1,9 +1,11 @@
 from enum import Enum
 
-from src.data_loaders import BasicLoader, RainLoaderJay, RadarLoaderJay
+from src.data_loaders import BasicLoader, RadarLoaderJay, RainLoaderJay
+
 
 class LoaderMapping(Enum):
-    """ Genrate Multiple Customized Data Loaders """
+    """Genrate Multiple Customized Data Loaders"""
+
     rain = RainLoaderJay
     radar = RadarLoaderJay
 
@@ -16,11 +18,11 @@ class LoaderMapping(Enum):
 
     def get_single_loader(key, value):
         return LoaderMapping.get_loader_type(key)(**value)
-    
+
     @classmethod
     def get_loader_type(cls, key):
         return cls[key].value
-    
+
     @classmethod
     def get_loader_nickname(cls, data_loader: BasicLoader) -> str:
         for member in cls:

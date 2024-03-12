@@ -1,15 +1,17 @@
+from datetime import datetime
+from typing import Dict, List, Tuple
+
 import numpy as np
 from torch.utils.data import Dataset
-from datetime import datetime
-from typing import List, Tuple, Dict
 
 from src.data_loaders.basic_loader import BasicLoader
 from src.loader_mapping import LoaderMapping
 
+
 class AdoptedDataset(Dataset):
     def __init__(
         self,
-        ilen: int, 
+        ilen: int,
         olen: int,
         oint: int,
         target_shape: Tuple[int],
@@ -36,7 +38,7 @@ class AdoptedDataset(Dataset):
 
     def __len__(self):
         return len(self._initial_time_list) // self._sampling_rate
-    
+
     def __getitem__(self, index):
         target_time = self._initial_time_list[index]
 
@@ -46,16 +48,22 @@ class AdoptedDataset(Dataset):
             nickname = LoaderMapping.get_loader_nickname(data_loader)
             if data_loader.is_inp:
                 input_data_map[nickname] = data_loader.load_input_data(
-                    target_time, self._ilen, self._target_lat, self._target_lon)
+                    target_time, self._ilen, self._target_lat, self._target_lon
+                )
             if data_loader.is_oup:
                 output_data_map[nickname] = data_loader.load_output_data(
-                    target_time, self._olen, self._oint, self._target_lat, self._target_lon)
+                    target_time,
+                    self._olen,
+                    self._oint,
+                    self._target_lat,
+                    self._target_lon,
+                )
 
         self.shape_check(input_data_map)
         self.shape_check(output_data_map)
 
         return input_data_map, output_data_map
-    
+
     def shape_check(self, data_map: Dict[str, np.ndarray]):
         if not list(data_map.values())[0].shape[-2:] == self._target_shape:
-            raise RuntimeError ("Data shape is not compatible to the target shape.")
+            raise RuntimeError("Data shape is not compatible to the target shape.")

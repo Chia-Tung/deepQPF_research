@@ -4,6 +4,7 @@ from torch import nn
 
 from src.model_architectures.basic_rnn import BasicRNN
 
+
 # input: B, C, H, W
 # flow: [B, 2, H, W]
 def wrap(input, flow):
@@ -24,6 +25,7 @@ def wrap(input, flow):
     output = torch.nn.functional.grid_sample(input, vgrid, align_corners=False)
     return output
 
+
 class TrajGRU(BasicRNN):
     # b_h_w: input feature map size
     def __init__(
@@ -38,7 +40,7 @@ class TrajGRU(BasicRNN):
         i2h_pad=(1, 1),
         h2h_kernel=(5, 5),
         h2h_dilate=(1, 1),
-        act_type=nn.LeakyReLU(negative_slope=0.2, inplace=True)
+        act_type=nn.LeakyReLU(negative_slope=0.2, inplace=True),
     ):
         super(TrajGRU, self).__init__(
             num_filter=num_filter,
@@ -49,7 +51,8 @@ class TrajGRU(BasicRNN):
             i2h_pad=i2h_pad,
             i2h_stride=i2h_stride,
             act_type=act_type,
-            prefix='TrajGRU')
+            prefix="TrajGRU",
+        )
         self._L = L
         self._zoneout = zoneout
 
@@ -61,7 +64,8 @@ class TrajGRU(BasicRNN):
             kernel_size=self._i2h_kernel,
             stride=self._i2h_stride,
             padding=self._i2h_pad,
-            dilation=self._i2h_dilate)
+            dilation=self._i2h_dilate,
+        )
 
         # inputs to flow
         self.i2f_conv1 = nn.Conv2d(
@@ -121,7 +125,14 @@ class TrajGRU(BasicRNN):
         assert seq_len is not None
         if states is None:
             states = torch.zeros(
-                (inputs.size(1), self._num_filter, self._state_height, self._state_width), dtype=torch.float)
+                (
+                    inputs.size(1),
+                    self._num_filter,
+                    self._state_height,
+                    self._state_width,
+                ),
+                dtype=torch.float,
+            )
             if inputs is not None:
                 states = states.type_as(inputs)
         if inputs is not None:
@@ -150,7 +161,9 @@ class TrajGRU(BasicRNN):
             if i2h_slice is not None:
                 reset_gate = torch.sigmoid(i2h_slice[0][i, ...] + h2h_slice[0])
                 update_gate = torch.sigmoid(i2h_slice[1][i, ...] + h2h_slice[1])
-                new_mem = self._act_type(i2h_slice[2][i, ...] + reset_gate * h2h_slice[2])
+                new_mem = self._act_type(
+                    i2h_slice[2][i, ...] + reset_gate * h2h_slice[2]
+                )
             else:
                 reset_gate = torch.sigmoid(h2h_slice[0])
                 update_gate = torch.sigmoid(h2h_slice[1])

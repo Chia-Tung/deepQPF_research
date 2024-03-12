@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+
 def _compute_custom_metric(prediction, target, func):
     # batch,pixels
     assert len(prediction.shape) == 2
@@ -16,19 +17,24 @@ def _compute_custom_metric(prediction, target, func):
 
     return func(tp, tn, fp, fn)
 
+
 def _compute_CSI(tp, tn, fp, fn):
     return tp / (tp + fn + fp)
+
 
 def _compute_HSS(tp, tn, fp, fn):
     num = tp * tn - fn * fp
     den = (tp + fn) * (fn + tn) + (tp + fp) * (fp + tn)
     return num / den
 
+
 def batch_CSI(prediction, target):
     return _compute_custom_metric(prediction, target, _compute_CSI)
 
+
 def batch_HSS(prediction, target):
     return _compute_custom_metric(prediction, target, _compute_HSS)
+
 
 def batch_precision(prediction, target):
     """
@@ -43,10 +49,13 @@ def batch_precision(prediction, target):
     # NOTE: that tp + fp can still be zero. so there can be some nan entries. It is kept this way to ensure that
     # output of batch_precision and batch_recall are aligned and therefore also of same dimension
     invalid_mask = N == 0
-    precision[~invalid_mask] = torch.true_divide(tp[~invalid_mask], (tp + fp)[~invalid_mask])
+    precision[~invalid_mask] = torch.true_divide(
+        tp[~invalid_mask], (tp + fp)[~invalid_mask]
+    )
     precision[torch.isnan(precision)] = 0
 
     return precision
+
 
 def batch_recall(prediction, target):
     """
@@ -59,6 +68,7 @@ def batch_recall(prediction, target):
     recall = -1e6 * tp.new_ones(tp.shape[0])
     recall[~invalid_mask] = torch.true_divide(tp[~invalid_mask], N[~invalid_mask])
     return recall
+
 
 class PerformanceDiagram:
     """
@@ -99,7 +109,9 @@ class PerformanceDiagram:
         mlist = [sum(list(d)) / np.sqrt(2) for d in PD_SR_list]
         if verbose:
             for i, t in enumerate(self._tlist):
-                print(f'Threshold:{t} Score:{mlist[i]:.3f} PD:{PD_SR_list[i][0]:.3f} SR:{PD_SR_list[i][1]:.3f}')
+                print(
+                    f"Threshold:{t} Score:{mlist[i]:.3f} PD:{PD_SR_list[i][0]:.3f} SR:{PD_SR_list[i][1]:.3f}"
+                )
 
         metric = 0
         wsum = 0
@@ -114,7 +126,7 @@ class PerformanceDiagram:
         if wsum > 0:
             return metric / wsum
         else:
-            return float('nan')
+            return float("nan")
 
     def compute(self, prediction, target):
         assert prediction.shape == target.shape
@@ -202,12 +214,12 @@ class PerformanceDiagramStable(PerformanceDiagram):
             pdsr.append(elem)
         # pdsr = [elem[:2] for elem in proc_data]
         return {
-            'metrics': pdsr,
-            'Th': self._tlist,
-            'F1': self.F1_scores(pdsr),
-            'HSS': hss,
-            'CSI': csi,
-            'Dotmetric': self.compute_overall_metric(pdsr, verbose=verbose),
+            "metrics": pdsr,
+            "Th": self._tlist,
+            "F1": self.F1_scores(pdsr),
+            "HSS": hss,
+            "CSI": csi,
+            "Dotmetric": self.compute_overall_metric(pdsr, verbose=verbose),
         }
 
     def reset(self):

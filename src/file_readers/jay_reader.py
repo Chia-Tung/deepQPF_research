@@ -1,9 +1,11 @@
-import numpy as np
-import datatable as dtb
 from typing import List
+
+import datatable as dtb
+import numpy as np
 
 from src.file_readers.basic_reader import BasicReader
 from src.utils.sparse_matrix_util import SparseMatrixUtil
+
 
 class JayReader(BasicReader):
     def __init__(self, xdim: int, ydim: int):
@@ -20,7 +22,7 @@ class JayReader(BasicReader):
         Args:
             filename_list (List[str]): List of .jay file paths.
 
-        Returns: 
+        Returns:
             array_data (np.ndarray): Array data with shape of [B, ydim, xdim]
         """
         # load data
