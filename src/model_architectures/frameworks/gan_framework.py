@@ -1,14 +1,17 @@
 from typing import Dict
 
 import numpy as np
+import pytorch_lightning.loggers as pl_loggers
 import torch
 import torch.nn as nn
 from pytorch_lightning import LightningModule
 from pytorch_lightning.callbacks import ModelCheckpoint
 
+from src.const import CONFIG
 from src.utils.discriminator_statistic import DiscriminatorStats
 from src.utils.performance_diagram import PerformanceDiagramStable
 from src.utils.running_average import RunningAverage
+from visualization.plot_tb_viz import gen_plot
 
 
 class GANFramework(LightningModule):
@@ -166,6 +169,12 @@ class GANFramework(LightningModule):
         neg = self.discriminator(aligned_prediction)
         self.D_stats.update(neg, pos)
 
+        # log images
+        if batch_idx in range(1, 11, 2):  # always log the first batch 64 images
+            self.log_tb_images(
+                inp_data, label, loss_dict["prediction"], bid=batch_idx, max_img_num=3
+            )
+
     def on_validation_epoch_end(self):
         # total validation loss
         val_loss_sum = 0
@@ -235,9 +244,70 @@ class GANFramework(LightningModule):
     def get_checkpoint_callback(self):
         return ModelCheckpoint(
             dirpath=self._ckp_dir,
-            filename="{epoch}_{val_loss:.6f}",
+            filename="GAN-{epoch:02d}-{val_loss:.6f}",
             save_top_k=1,
             verbose=True,
             monitor="val_loss",
             mode="min",
         )
+
+    def log_tb_images(
+        self, *viz_batch: any, bid: int, max_img_num: int | None = None
+    ) -> None:
+        """
+        Plot figures for DeepQPF project showing on Tensorboard.
+
+        Args:
+            viz_batch (tuple[any]):
+                id 0 => input_data including Rain, radar, etc.
+                    w/ format {"var_name", [B, input_len, num_channel, H, W]}
+                id 1 => ground truth, accumulated rainfall.
+                    w/ shape of [B, output_len, H, W]
+                id 2 => prediction, model output.
+                    w/ shape of [output_len, B, H, W]
+            bid (int): batch index
+            max_img_num: how many images to show on Tensorboard
+        """
+        # Get tensorboard logger
+        for logger in self.trainer.loggers:
+            if isinstance(logger, pl_loggers.TensorBoardLogger):
+                tb_logger = logger.experiment
+                break
+
+        # data preprocess
+        input_data, label, pred = viz_batch
+        input_var_config = CONFIG["train_config"]["data_meta_info"]
+
+        tmp = []
+        for key, value in input_data.items():
+            try:
+                nfactor = input_var_config[key]["normalize_factor"]
+                orig_value = value * nfactor
+                tmp.append(orig_value)
+            except:
+                raise KeyError(f"no such key: {key} in config")
+        concat_input = torch.concat(tmp, dim=2)  # [B, S, C, H, W]
+        pred = torch.permute(pred, (1, 0, 2, 3))  # [B, S, H, W]
+        img_num = max_img_num if max_img_num is not None else pred.size(0)
+
+        # draw different type of data
+        for img_idx in range(img_num):
+            if self.current_epoch == 0:
+                # input
+                tb_logger.add_figure(
+                    f"case_batch{bid}_{img_idx}/input_data",
+                    gen_plot(concat_input[img_idx]),
+                    global_step=0,
+                )
+                # ground truth
+                tb_logger.add_figure(
+                    f"case_batch{bid}_{img_idx}/ground_truth",
+                    gen_plot(label[img_idx]),
+                    global_step=0,
+                )
+            # prediction
+            tb_logger.add_figure(
+                f"case_batch{bid}_{img_idx}/prediction",
+                gen_plot(pred[img_idx]),
+                global_step=self.global_step,
+            )

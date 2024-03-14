@@ -43,3 +43,8 @@ pip install https://h2o-release.s3.amazonaws.com/datatable/dev%2Fdatatable-1.1.0
 
 ## Training
 Well prepare all the hyperparameters and execute `python train.py`.
+
+## Tensorboard
+```Bash
+tensorboard --logdir ./deepQPF_research/logs/ --port 5000 --bind_all --load_fast=false
+```

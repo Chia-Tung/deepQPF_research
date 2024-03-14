@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 
 from src.blacklist import Blacklist
+from src.const import BLACKLIST_PATH, GREYLIST
 from src.data_loaders import BasicLoader
 from src.loader_mapping import LoaderMapping
 from src.utils.time_util import TimeUtil
@@ -59,11 +60,11 @@ class DatetimeManager:
             )
 
     def _load_blacklist(self) -> None:
-        if Blacklist.BLACKLIST_PATH:
+        if BLACKLIST_PATH:
             Blacklist.read_blacklist()
             self.__blacklist = Blacklist.BLACKLIST
 
-        if Blacklist.GREYLIST:
+        if GREYLIST:
             self.__greylist = Blacklist.GREYLIST
             self.__blacklist = self.__blacklist.union(self.__greylist)
 

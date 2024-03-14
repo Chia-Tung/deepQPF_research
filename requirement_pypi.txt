@@ -5,3 +5,4 @@ metpy
 tensorboard
 feather-format
 p-tqdm
+geopandas

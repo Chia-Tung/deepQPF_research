@@ -1,36 +1,21 @@
 import datetime
 from pathlib import Path
 
+from src.const import BLACKLIST_PATH, GREYLIST
 from src.utils.time_util import TimeUtil
 
 # Needed when executing this file
 # import sys
 # sys.path.append(str(Path.cwd()))
 
-three_days = TimeUtil.three_days
-
 
 class Blacklist:
-    BLACKLIST_PATH = "/home/dong1128/deepQPF_research/exp_config/black_list.txt"
     BLACKLIST = set()
-
-    GREYLIST = (
-        three_days(2018, 5, 7)
-        + three_days(2018, 5, 8)
-        + three_days(2019, 7, 22)
-        + three_days(2019, 8, 18)
-        + three_days(2019, 9, 30)
-        + three_days(2019, 10, 1)
-        + three_days(2019, 12, 30)
-        + three_days(2019, 12, 31)
-        + three_days(2021, 6, 4)
-        + three_days(2021, 10, 16)
-    )
     GREYLIST = set(GREYLIST)
 
     @classmethod
     def read_blacklist(cls) -> None:
-        with open(Blacklist.BLACKLIST_PATH, "r") as f:
+        with open(BLACKLIST_PATH, "r") as f:
             text = f.readline()
             while text:
                 cls.BLACKLIST.add(eval(text[:-1]))  # skip '\n'
@@ -71,7 +56,7 @@ if __name__ == "__main__":
     def fn(dt: datetime) -> None:
         data = rain_loader.load_output_data(dt, 3, 6, [20, 27], [118, 123.5])
         if data.max() >= 250:
-            with open(Blacklist.BLACKLIST_PATH, "a") as f:
+            with open(BLACKLIST_PATH, "a") as f:
                 f.write(dt.__repr__() + "\n")
 
     results = p_map(fn, time_map, **{"num_cpus": 8})
