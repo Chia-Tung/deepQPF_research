@@ -41,9 +41,10 @@ python train.py
 
 step 3. monitoring on tensorboard
 ```bash
+# only http can work, not https
 tensorboard --logdir ./deepQPF_research/logs/ --port 5000 --bind_all --load_fast=false
 ```
-:warning: Only http can work, not https
+
 ![](./visualization/tb_example.png)
 *figure 2. Tensorboard example*
 
@@ -57,3 +58,7 @@ tensorboard --logdir ./deepQPF_research/logs/ --port 5000 --bind_all --load_fast
 ## Model Director
 1. Choose certain model builder
 2. Prepare all elements the model needs and `build_model()`
+
+|Model Name|Total Params|Gird Size|Batch Size|GPU Mem Consumption|Min Valid Loss|
+|:----:|:----:|:----:|:----:|:----:|:----:|
+|ConvGRU|8.7M|(540, 420)|64|18,767 MiB|1.102|

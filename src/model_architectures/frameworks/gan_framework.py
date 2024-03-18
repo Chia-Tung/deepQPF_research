@@ -53,6 +53,9 @@ class GANFramework(LightningModule):
         # checkpint
         self._ckp_dir = checkpoint_directory
         # save hyperparameter
+        self.save_hyperparameters(
+            "add_hetr_from_poni", "learning_rate", "target_len", "adv_weight"
+        )
 
     def forward(self, input_data: Dict[str, np.ndarray], label: Dict[str, np.ndarray]):
         """
@@ -161,7 +164,7 @@ class GANFramework(LightningModule):
         self.validation_step_outputs.append(ret)
 
         # performance diagram
-        aligned_prediction = loss_dict["prediction"].permute(1, 0, 2, 3)
+        aligned_prediction = loss_dict["prediction"]
         self.eval_critirion.compute(aligned_prediction, label)
 
         # Discriminator stats
@@ -287,7 +290,6 @@ class GANFramework(LightningModule):
             except:
                 raise KeyError(f"no such key: {key} in config")
         concat_input = torch.concat(tmp, dim=2)  # [B, S, C, H, W]
-        pred = torch.permute(pred, (1, 0, 2, 3))  # [B, S, H, W]
         img_num = max_img_num if max_img_num is not None else pred.size(0)
 
         # draw different type of data

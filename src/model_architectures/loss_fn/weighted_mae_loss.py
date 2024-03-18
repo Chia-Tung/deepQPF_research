@@ -16,9 +16,6 @@ class WeightedMaeLossPixel(nn.Module):
             predicted, target, mask = ignore_boundary(
                 self._bbox, predicted, target, mask
             )
-        seq_len, batch_size, height, width = predicted.shape
-        # batch_size, seq_len,height, width
-        predicted = predicted.permute(1, 0, 2, 3)
 
         weights = compute_weights(target, mask, self.balancing_weights)
         return weights * (torch.abs((predicted - target)))

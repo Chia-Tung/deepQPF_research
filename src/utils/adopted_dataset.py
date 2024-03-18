@@ -48,7 +48,11 @@ class AdoptedDataset(Dataset):
             nickname = LoaderMapping.get_loader_nickname(data_loader)
             if data_loader.is_inp:
                 input_data_map[nickname] = data_loader.load_input_data(
-                    target_time, self._ilen, self._target_lat, self._target_lon
+                    target_time,
+                    self._ilen,
+                    self._target_lat,
+                    self._target_lon,
+                    self._target_shape,
                 )
             if data_loader.is_oup:
                 output_data_map[nickname] = data_loader.load_output_data(
@@ -57,6 +61,7 @@ class AdoptedDataset(Dataset):
                     self._oint,
                     self._target_lat,
                     self._target_lon,
+                    self._target_shape,
                 )
 
         self.shape_check(input_data_map)

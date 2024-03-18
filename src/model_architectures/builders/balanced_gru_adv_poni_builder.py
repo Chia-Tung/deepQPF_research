@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from pytorch_lightning import LightningModule
+
 import src.model_architectures as ma
+from src.model_architectures.builders.base_builder import BaseBuilder
 from src.model_architectures.loss_fn.loss_type import LossType
 from src.model_architectures.utils import *
 
 
-class BalancedGRUAdvPoniBuilder:
+class BalancedGRUAdvPoniBuilder(BaseBuilder):
     def __init__(
         self,
         model_config,
@@ -91,7 +94,7 @@ class BalancedGRUAdvPoniBuilder:
         self._dis_loss_fn = nn.BCELoss()
         return self
 
-    def build(self):
+    def build(self) -> LightningModule:
         return self._framework(
             # models
             self._encoder,

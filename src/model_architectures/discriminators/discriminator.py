@@ -19,7 +19,7 @@ class Discriminator(nn.Module):
 
     def forward(self, img):
         img = self._downsample(img)
-        seq, batch, height, width = img.shape
+        batch, seq, height, width = img.shape
         img_flat = img.view(seq * batch, -1)
         validity = self.model(img_flat)
         return validity
@@ -47,7 +47,7 @@ class Discriminator2(nn.Module):
         print(f"[{self.__class__.__name__}] Downsample:{self._dsz}")
 
     def forward(self, img):
-        seq, batch, height, width = img.shape
+        batch, seq, height, width = img.shape
         img = img.reshape((seq * batch, 1, height, width))
         emb = self.model2D(img)
         emb_flat = emb.view(seq * batch, -1)
@@ -90,7 +90,7 @@ class Discriminator3(nn.Module):
         print(f"[{self.__class__.__name__}] Downsample:{self._dsz}")
 
     def forward(self, img):
-        seq, batch, height, width = img.shape
+        batch, seq, height, width = img.shape
         img = img.reshape((seq * batch, 1, height, width))
         validity = self.model(img)
         validity = validity.view((seq, batch, 1))
@@ -122,7 +122,7 @@ class Discriminator4(nn.Module):
         print(f"[{self.__class__.__name__}] Downsample:{self._dsz}")
 
     def forward(self, img):
-        seq, batch, height, width = img.shape
+        batch, seq, height, width = img.shape
         img = img.reshape((seq * batch, 1, height, width))
         validity = self.model(img)
         validity = validity.view((seq, batch, 1))

@@ -60,6 +60,7 @@ class RainLoaderNc(BasicLoader):
         ilen: int,
         target_lat: List[float],
         target_lon: List[float],
+        target_shape: tuple[int],
     ) -> np.ndarray:
         data = []
         for time_offset in (
@@ -73,6 +74,11 @@ class RainLoaderNc(BasicLoader):
             array_data = CropUtil.crop_by_coor(
                 array_data, self._lat_range, self._lon_range, target_lat, target_lon
             )
+            if array_data.shape[-2:] != target_shape:
+                const = [
+                    int(array_data.shape[-2:][i] / target_shape[i]) for i in range(2)
+                ]
+                array_data = array_data[..., :: const[0], :: const[1]]
             # expand dimension
             array_data = array_data[None]
             # normalizatoin
@@ -88,6 +94,7 @@ class RainLoaderNc(BasicLoader):
         oint: int,
         target_lat: List[float],
         target_lon: List[float],
+        target_shape: tuple[int],
     ) -> np.ndarray:
         data = []
         for time_offset in (
@@ -101,6 +108,11 @@ class RainLoaderNc(BasicLoader):
             array_data = CropUtil.crop_by_coor(
                 array_data, self._lat_range, self._lon_range, target_lat, target_lon
             )
+            if array_data.shape[-2:] != target_shape:
+                const = [
+                    int(array_data.shape[-2:][i] / target_shape[i]) for i in range(2)
+                ]
+            array_data = array_data[..., :: const[0], :: const[1]]
             # expand dimension
             array_data = array_data[None]
             data.append(array_data)

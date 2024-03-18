@@ -145,5 +145,6 @@ class DataManager(LightningDataModule):
         return {
             "shape": self._target_shape,
             "channel": {k: v.shape[1] for k, v in inp_data_map.items()},
+            "ilen": self._ilen,
             "olen": self._olen,
         }

@@ -56,4 +56,5 @@ class Forecaster(nn.Module):
             )
 
         assert input_data.shape[2] == 1, "Eventually, there should be only one channel"
+        input_data = input_data.permute(1, 0, 2, 3, 4) # [B, 3, C, H, W]
         return input_data[:, :, 0, :, :]

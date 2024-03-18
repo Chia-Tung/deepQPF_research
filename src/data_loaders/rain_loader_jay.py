@@ -57,6 +57,7 @@ class RainLoaderJay(RainLoaderNc):
         ilen: int,
         target_lat: List[float],
         target_lon: List[float],
+        target_shape: tuple[int],
     ) -> np.ndarray:
         array_data = self.load_data_from_datetime(
             [target_time - timedelta(minutes=self.GRANULARITY * 5), target_time]
@@ -67,6 +68,9 @@ class RainLoaderJay(RainLoaderNc):
         array_data = CropUtil.crop_by_coor(
             array_data, self._lat_range, self._lon_range, target_lat, target_lon
         )
+        if array_data.shape[-2:] != target_shape:
+            const = [int(array_data.shape[-2:][i] / target_shape[i]) for i in range(2)]
+            array_data = array_data[..., :: const[0], :: const[1]]
         # normalizatoin
         array_data /= self._BasicLoader__FACTOR
 
@@ -79,6 +83,7 @@ class RainLoaderJay(RainLoaderNc):
         oint: int,
         target_lat: List[float],
         target_lon: List[float],
+        target_shape: tuple[int],
     ) -> np.ndarray:
         array_data = self.load_data_from_datetime(
             [
@@ -92,6 +97,9 @@ class RainLoaderJay(RainLoaderNc):
         array_data = CropUtil.crop_by_coor(
             array_data, self._lat_range, self._lon_range, target_lat, target_lon
         )
+        if array_data.shape[-2:] != target_shape:
+            const = [int(array_data.shape[-2:][i] / target_shape[i]) for i in range(2)]
+            array_data = array_data[..., :: const[0], :: const[1]]
         # convert rain rate to accumulated rainfall
         list_array_data = np.split(array_data, olen, axis=0)
         output_data = [data.mean(axis=0, keepdims=True) for data in list_array_data]

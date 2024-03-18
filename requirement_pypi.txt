@@ -3,6 +3,7 @@ ipykernel
 netcdf4
 metpy
 tensorboard
-feather-format
 p-tqdm
 geopandas
+einops
+transformer

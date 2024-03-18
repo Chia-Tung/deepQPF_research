@@ -30,6 +30,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
         ilen: int,
         target_lat: list[float],
         target_lon: list[float],
+        target_shape: tuple[int],
     ) -> np.ndarray:
         """
         Args:
@@ -37,6 +38,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
             ilen (int): Input length.
             target_lat (List[float]): Target latitude to crop.
             target_lon (List[float]): Target longitude to crop.
+            target_shape (Tuple[int]): In case one needs different resolution from orig
 
         Returns:
             data (np.ndarray): Rain rate which has a shape of [ilen, CH, H, W].
@@ -51,6 +53,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
         oint: int,
         target_lat: list[float],
         target_lon: list[float],
+        target_shape: tuple[int],
     ) -> np.ndarray:
         """
         Args:
@@ -59,6 +62,7 @@ class BasicLoader(metaclass=abc.ABCMeta):
             oint (int): Output interval. Granularity * interval = 1 hour.
             target_lat (List[float]): Target latitude to crop.
             target_lon (List[float]): Target longitude to crop.
+            target_shape (Tuple[int]): In case one needs different resolution from orig
 
         Returns:
             data (np.ndarray): Hourly accumulated rainfall. The shape

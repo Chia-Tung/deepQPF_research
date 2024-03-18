@@ -29,16 +29,17 @@ def main():
 
     checkpoint_callback = model.get_checkpoint_callback()
     trainer = Trainer(
+        num_sanity_val_steps=1,
         benchmark=True,
         accelerator="gpu",
-        devices=[1],
+        devices=[0],
         fast_dev_run=False,  # True: debug and compile once
         logger=logger,
         check_val_every_n_epoch=1,
         max_epochs=50,
         callbacks=[
             DeviceStatsMonitor(cpu_stats=True),
-            EarlyStopping(monitor="val_loss", patience=10),
+            EarlyStopping(monitor="val_loss", patience=5),
             checkpoint_callback,
         ],
     )
