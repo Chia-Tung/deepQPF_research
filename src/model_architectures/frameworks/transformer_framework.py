@@ -7,7 +7,7 @@ from einops import rearrange
 from pytorch_lightning import LightningModule
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torch import nn
-from transformers import get_linear_schedule_with_warmup
+from torch.optim.lr_scheduler import LambdaLR
 
 from src.const import CONFIG
 from visualization.plot_tb_viz import gen_plot
@@ -29,7 +29,6 @@ class TransformerFramework(LightningModule):
             batch_first=True,
         )
         self.postprocess = kwargs["postprocess"]
-        self.model = nn.Sequential(self.preprocess, self.transformer, self.postprocess)
         # save checkpoint
         self.loss_fn = kwargs["loss_fn"]
         self._ckp_dir = checkpoint_directory
@@ -49,54 +48,35 @@ class TransformerFramework(LightningModule):
         oup = self.postprocess(attn_data)  # [B, 3, H, W]
         return oup
 
-    # def configure_optimizers(self) -> Any:
-    #     """Prepare optimizer and schedule (linear warmup and decay)"""
-    #     model = self.model
-    #     no_decay = ["bias", "norm"]
-    #     optimizer_grouped_parameters = [
-    #         {
-    #             "params": [
-    #                 p
-    #                 for n, p in model.named_parameters()
-    #                 if not any(nd in n for nd in no_decay)
-    #             ],
-    #             "weight_decay": self.hparams.weight_decay,
-    #         },
-    #         {
-    #             "params": [
-    #                 p
-    #                 for n, p in model.named_parameters()
-    #                 if any(nd in n for nd in no_decay)
-    #             ],
-    #             "weight_decay": 0.0,
-    #         },
-    #     ]
-    #     optimizer = torch.optim.AdamW(
-    #         optimizer_grouped_parameters,
-    #         lr=self.hparams.learning_rate,
-    #         eps=self.hparams.adam_epsilon,
-    #     )
-
-    #     scheduler = get_linear_schedule_with_warmup(
-    #         optimizer,
-    #         num_warmup_steps=self.hparams.warmup_steps,
-    #         num_training_steps=self.trainer.estimated_stepping_batches,
-    #     )
-    #     scheduler = {"scheduler": scheduler, "interval": "step", "frequency": 1}
-    #     return [optimizer], [scheduler]
-
-    def configure_optimizers(self, learning_rate=5e-4):
-        optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        return optimizer
+    def configure_optimizers(self):
+        """
+        optimizer <-> lr_scheduler (lr_scheduler_config)
+        param groups in each optimizer <-> lambda in each lr_scheduler
+        """
+        # set optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        # set lr scheduler
+        def lr_lambda(epoch):
+            if epoch < self.hparams.warmup_epochs:
+                lr_scale = 1e1
+            else:
+                lr_scale = 0.95**epoch
+            return lr_scale
+        scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda)
+        lr_scheduler_config = {
+            "scheduler": scheduler,
+            "interval": "epoch",
+            "frequency": 1,
+            "name": "customized_lr",
+        }
+        return {"optimizer": optimizer, "lr_scheduler": lr_scheduler_config}
 
     def training_step(self, batch, batch_idx):
         inp_data, label = batch
         outputs = self(inp_data, label)
         loss = self.loss_fn(outputs, label["rain"])
 
-        self.log(
-            "train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True
-        )
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def on_validation_epoch_start(self) -> None:
@@ -110,7 +90,7 @@ class TransformerFramework(LightningModule):
         label = label["rain"]
         loss = self.loss_fn(outputs, label)
 
-        self.log("val_loss", loss, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
 
         self.val_output_list.append({"loss": loss, "preds": outputs, "labels": label})
 
@@ -120,9 +100,7 @@ class TransformerFramework(LightningModule):
 
     def on_validation_epoch_end(self):
         total_loss = np.mean([v["loss"].item() for v in self.val_output_list])
-        self.log(
-            "total_val_loss", total_loss, on_epoch=True, prog_bar=True, logger=True
-        )
+        self.log("total_val_loss", total_loss, on_epoch=True, prog_bar=True)
 
     def get_checkpoint_callback(self):
         return ModelCheckpoint(

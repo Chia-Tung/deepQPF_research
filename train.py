@@ -4,7 +4,7 @@ import torch
 import torch.utils.cpp_extension
 import torchvision
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import DeviceStatsMonitor, EarlyStopping
+from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from src.const import CONFIG as config
@@ -38,7 +38,7 @@ def main():
         check_val_every_n_epoch=1,
         max_epochs=50,
         callbacks=[
-            DeviceStatsMonitor(cpu_stats=True),
+            LearningRateMonitor(),
             EarlyStopping(monitor="val_loss", patience=5),
             checkpoint_callback,
         ],

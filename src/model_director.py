@@ -1,5 +1,3 @@
-from pytorch_lightning import LightningModule
-
 from src.model_architectures import BalancedGRUAdvPoniBuilder, TransformerBuilder
 from src.model_architectures.builders.base_builder import BaseBuilder
 from src.model_architectures.model_type import ModelType
@@ -43,7 +41,7 @@ class ModelDirector:
 
         print(f"[{self.__class__.__name__}] Using {self._model_type.name} model")
 
-    def build_model(self) -> LightningModule:
+    def build_model(self):
         if self.model_builder is not None:
             return self.model_builder.build()
         else:
