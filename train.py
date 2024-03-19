@@ -31,15 +31,18 @@ def main():
     trainer = Trainer(
         num_sanity_val_steps=1,
         benchmark=True,
-        accelerator="gpu",
-        devices=[0],
-        fast_dev_run=False,  # True: debug and compile once
+        fast_dev_run=False,  # use n batch(es) to fast run through train/valid
         logger=logger,
         check_val_every_n_epoch=1,
         max_epochs=50,
+        limit_train_batches = None,
+        limit_val_batches = None,
+        accelerator="gpu",
+        devices=[0, 1],
+        strategy="ddp",
         callbacks=[
             LearningRateMonitor(),
-            EarlyStopping(monitor="val_loss", patience=5),
+            EarlyStopping(monitor="val_loss_epoch", patience=5),
             checkpoint_callback,
         ],
     )

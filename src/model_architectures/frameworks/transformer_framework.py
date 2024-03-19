@@ -55,6 +55,7 @@ class TransformerFramework(LightningModule):
         """
         # set optimizer
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+
         # set lr scheduler
         def lr_lambda(epoch):
             if epoch < self.hparams.warmup_epochs:
@@ -62,6 +63,7 @@ class TransformerFramework(LightningModule):
             else:
                 lr_scale = 0.95**epoch
             return lr_scale
+
         scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda)
         lr_scheduler_config = {
             "scheduler": scheduler,
@@ -76,7 +78,7 @@ class TransformerFramework(LightningModule):
         outputs = self(inp_data, label)
         loss = self.loss_fn(outputs, label["rain"])
 
-        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log("train_loss", loss, on_step=True, prog_bar=True)
         return loss
 
     def on_validation_epoch_start(self) -> None:
@@ -90,25 +92,32 @@ class TransformerFramework(LightningModule):
         label = label["rain"]
         loss = self.loss_fn(outputs, label)
 
-        self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        self.log(
+            "val_loss", loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True
+        )
 
-        self.val_output_list.append({"loss": loss, "preds": outputs, "labels": label})
+        # self.val_output_list.append(loss.cpu())
 
-        # log images
-        if batch_idx in range(1, 11, 2):  # always log the first batch 64 images
+        # log images on main GPU
+        if batch_idx in range(1, 11, 2) and self.global_rank == 0:
             self.log_tb_images(inp_data, label, outputs, bid=batch_idx, max_img_num=3)
 
-    def on_validation_epoch_end(self):
-        total_loss = np.mean([v["loss"].item() for v in self.val_output_list])
-        self.log("total_val_loss", total_loss, on_epoch=True, prog_bar=True)
+    # No need any more since `self.log(..., on_epoch=True)` automatically accumulates
+    # variables using mean-reduction. The key name is the variable name with suffix
+    # `_epoch`
+    # def on_validation_epoch_end(self):
+    #     total_loss = np.mean(self.val_output_list)
+    #     self.log(
+    #         "total_val_loss", total_loss, on_epoch=True, prog_bar=True, sync_dist=True
+    #     )
 
     def get_checkpoint_callback(self):
         return ModelCheckpoint(
             dirpath=self._ckp_dir,
-            filename="Transformer-{epoch:02d}-{total_val_loss:.6f}",
+            filename="Transformer-{epoch:02d}-{val_loss_epoch:.6f}",
             save_top_k=1,
             verbose=True,
-            monitor="total_val_loss",
+            monitor="val_loss_epoch",
             mode="min",
         )
 

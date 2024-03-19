@@ -160,7 +160,7 @@ class GANFramework(LightningModule):
         # generator prediction loss
         loss_dict = self.generator_loss(inp_data, label, batch_size)
         log_data = loss_dict.pop("progress_bar")
-        ret = {"val_loss": log_data["loss_pred"], "N": batch_size}
+        ret = {"val_loss": log_data["loss_pred"].cpu(), "N": batch_size}
         self.validation_step_outputs.append(ret)
 
         # performance diagram
@@ -186,7 +186,7 @@ class GANFramework(LightningModule):
             val_loss_sum += output["val_loss"] * output["N"]
             N += output["N"]
         val_loss_mean = val_loss_sum / N
-        self.log("val_loss", val_loss_mean)
+        self.log("val_loss_epoch", val_loss_mean)
 
         # performance diagram
         pdsr = self.eval_critirion.get()["Dotmetric"]
@@ -247,10 +247,10 @@ class GANFramework(LightningModule):
     def get_checkpoint_callback(self):
         return ModelCheckpoint(
             dirpath=self._ckp_dir,
-            filename="GAN-{epoch:02d}-{val_loss:.6f}",
+            filename="GAN-{epoch:02d}-{val_loss_epoch:.6f}",
             save_top_k=1,
             verbose=True,
-            monitor="val_loss",
+            monitor="val_loss_epoch",
             mode="min",
         )
 
