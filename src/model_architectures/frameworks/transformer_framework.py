@@ -36,7 +36,16 @@ class TransformerFramework(LightningModule):
     def forward(
         self, input_data: dict[str, np.ndarray], label: dict[str, np.ndarray]
     ) -> torch.Tensor:
-        # inp = [B, S, 2, 54, 42], label = [B, 3, H, W]
+        """
+        Function: TransformerFramework.forward
+        Args:
+            input_data (dict[str, np.ndarray]): input data, keys are `radar` and `rain`
+                and the array for each parameter is the shape of [B, S, C, H, W]
+            label (dict[str, np.ndarray]): label, keys are `rain` and the array for each
+                parameter is the shape of [B, C, H, W]
+        Returns:
+            torch.Tensor: output of the network
+        """
         input_data = torch.concat(list(input_data.values()), dim=2)  # [B, 6, 2, H, W]
         label = rearrange(
             label["rain"], "b (s c) h w -> b s c h w", c=1
@@ -74,6 +83,9 @@ class TransformerFramework(LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": lr_scheduler_config}
 
     def training_step(self, batch, batch_idx):
+        if batch_idx == 0 and self.global_step == 0 and self.global_rank == 0:
+            self.log_tb_graph()
+
         inp_data, label = batch
         outputs = self(inp_data, label)
         loss = self.loss_fn(outputs, label["rain"])
@@ -121,6 +133,23 @@ class TransformerFramework(LightningModule):
             mode="min",
         )
 
+    def get_tb_logger(self):
+        """
+        Retrieves the TensorBoard logger from the list of loggers in the trainer.
+
+        Returns:
+            tb_logger (tensorboardX.SummaryWriter): The TensorBoard logger object.
+
+        Raises:
+            ValueError: If the TensorBoard logger is not found in the trainer.
+        """
+        for logger in self.trainer.loggers:
+            if isinstance(logger, pl_loggers.TensorBoardLogger):
+                tb_logger = logger.experiment
+                return tb_logger
+
+        raise ValueError("TensorboardLogger not found in trainer")
+
     def log_tb_images(
         self, *viz_batch: any, bid: int, max_img_num: int | None = None
     ) -> None:
@@ -138,11 +167,7 @@ class TransformerFramework(LightningModule):
             bid (int): batch index
             max_img_num: how many images to show on Tensorboard
         """
-        # Get tensorboard logger
-        for logger in self.trainer.loggers:
-            if isinstance(logger, pl_loggers.TensorBoardLogger):
-                tb_logger = logger.experiment
-                break
+        tb_logger = self.get_tb_logger()
 
         # data preprocess
         input_data, label, pred = viz_batch
@@ -180,3 +205,27 @@ class TransformerFramework(LightningModule):
                 gen_plot(pred[img_idx]),
                 global_step=self.global_step,
             )
+
+    def log_tb_graph(self):
+        tb_logger = self.get_tb_logger()
+        prototype_inp = {}
+        for k, v in self.hparams.channel.items():
+            prototype_inp[k] = torch.Tensor(
+                self.hparams.batch_size,
+                self.hparams.ilen,
+                v,
+                self.hparams.shape[0],
+                self.hparams.shape[1],
+            ).cuda()
+
+        prototype_oup = dict(
+            rain=torch.Tensor(
+                self.hparams.batch_size,
+                self.hparams.olen,
+                self.hparams.shape[0],
+                self.hparams.shape[1],
+            )
+        ).cuda()
+
+        # this funcation will call self.forward
+        tb_logger.add_graph(self, [prototype_inp, prototype_oup], verbose=False)

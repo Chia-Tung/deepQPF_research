@@ -42,7 +42,7 @@ python train.py
 step 3. monitoring on tensorboard
 ```bash
 # only http can work, not https
-tensorboard --logdir ./deepQPF_research/logs/ --port 5000 --bind_all --load_fast=false
+tensorboard --logdir ./logs/ --port 5000 --bind_all --load_fast=false
 ```
 
 ![](./visualization/tb_example.png)

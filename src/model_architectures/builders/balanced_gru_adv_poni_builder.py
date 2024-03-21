@@ -109,4 +109,5 @@ class BalancedGRUAdvPoniBuilder(BaseBuilder):
             self._adv_w,
             # checkpoint
             self._checkpoint_dir,
+            **self._data_info,
         )

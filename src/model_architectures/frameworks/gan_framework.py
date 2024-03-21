@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Callable, Dict
 
 import numpy as np
 import pytorch_lightning.loggers as pl_loggers
@@ -17,17 +17,37 @@ from visualization.plot_tb_viz import gen_plot
 class GANFramework(LightningModule):
     def __init__(
         self,
-        encoder,
-        forecaster,
-        discriminator,
-        loss_fn,
-        dis_loss_fn,
-        add_hetr_from_poni,
-        learning_rate,
-        target_len,
-        adv_weight,
-        checkpoint_directory,
-    ):
+        encoder: torch.nn.Module,
+        forecaster: torch.nn.Module,
+        discriminator: torch.nn.Module,
+        loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+        dis_loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+        add_hetr_from_poni: bool,
+        learning_rate: float,
+        target_len: int,
+        adv_weight: float,
+        checkpoint_directory: str,
+        **kwargs: Dict[str, Any],
+    ) -> None:
+        """
+        Initialize a GANFramework instance.
+
+        Args:
+            encoder (torch.nn.Module): The encoder module.
+            forecaster (torch.nn.Module): The forecaster module.
+            discriminator (torch.nn.Module): The discriminator module.
+            loss_fn (Callable[[torch.Tensor, torch.Tensor], torch.Tensor]): The loss function for the
+                forecaster and the discriminator.
+            dis_loss_fn (Callable[[torch.Tensor, torch.Tensor], torch.Tensor]): The loss function for
+                the discriminator.
+            add_hetr_from_poni (bool): Whether to add the heterogeneous information from the PONI
+                image or not.
+            learning_rate (float): The learning rate.
+            target_len (int): The target length.
+            adv_weight (float): The weight of the adversarial loss.
+            checkpoint_directory (str): The directory to save the checkpoint.
+            kwargs (Dict[str, Any]): The keyword arguments.
+        """
         super().__init__()
         # models
         self.encoder = encoder
@@ -54,16 +74,23 @@ class GANFramework(LightningModule):
         self._ckp_dir = checkpoint_directory
         # save hyperparameter
         self.save_hyperparameters(
-            "add_hetr_from_poni", "learning_rate", "target_len", "adv_weight"
+            ignore=[
+                "encoder",
+                "forecaster",
+                "discriminator",
+                "loss_fn",
+                "dis_loss_fn",
+                "checkpoint_directory",
+            ]
         )
 
-    def forward(self, input_data: Dict[str, np.ndarray], label: Dict[str, np.ndarray]):
+    def forward(self, input_data: Dict[str, np.ndarray], label: np.ndarray):
         """
         Args:
             input_data (Dict[str, np.ndarray]): All of the data including axiliary information,
                 and the array for each parameter is the shape of [B, input_len, num_channel,
                 H, W]
-            label (Dict[str, np.ndarray]): Rainfall targets whose array is be the shape
+            label (np.ndarray): Rainfall targets whose array is be the shape
                 of [B, output_len, H, W]
         Return:
             output: rainfall predictions of shape [Seq, Batch, Height, Width]
@@ -102,6 +129,9 @@ class GANFramework(LightningModule):
         return opt_g, opt_d
 
     def training_step(self, batch, batch_idx):
+        if batch_idx == 0 and self.global_step == 0 and self.global_rank == 0:
+            self.log_tb_graph()
+
         # data from torch.data.Dataloader will be automatically turned into tensor in batch
         inp_data, label = batch
         label = label["rain"]
@@ -313,3 +343,30 @@ class GANFramework(LightningModule):
                 gen_plot(pred[img_idx]),
                 global_step=self.global_step,
             )
+
+    def log_tb_graph(self):
+        # Get tensorboard logger
+        for logger in self.trainer.loggers:
+            if isinstance(logger, pl_loggers.TensorBoardLogger):
+                tb_logger = logger.experiment
+                break
+
+        prototype_inp = {}
+        for k, v in self.hparams.channel.items():
+            prototype_inp[k] = torch.Tensor(
+                self.hparams.batch_size,
+                self.hparams.ilen,
+                v,
+                self.hparams.shape[0],
+                self.hparams.shape[1],
+            ).cuda()
+
+        prototype_oup = torch.Tensor(
+            self.hparams.batch_size,
+            self.hparams.olen,
+            self.hparams.shape[0],
+            self.hparams.shape[1],
+        ).cuda()
+
+        # this funcation will call self.forward
+        tb_logger.add_graph(self, [prototype_inp, prototype_oup], verbose=False)

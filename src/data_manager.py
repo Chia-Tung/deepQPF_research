@@ -143,6 +143,7 @@ class DataManager(LightningDataModule):
     def get_data_info(self):
         inp_data_map = self._train_dataset[0][0]
         return {
+            "batch_size": self._batch_size,
             "shape": self._target_shape,
             "channel": {k: v.shape[1] for k, v in inp_data_map.items()},
             "ilen": self._ilen,

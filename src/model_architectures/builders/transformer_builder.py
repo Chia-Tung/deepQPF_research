@@ -83,21 +83,29 @@ class TransformerBuilder(BaseBuilder):
             # inp = [B, S, C, 540, 420]
             Rearrange("b s c h w -> (b s) c h w"),
             nn.Conv2d(inp_ch, 2 * inp_ch, kernel_size=6, stride=6),  # [B*S, 2C, 90, 70]
+            nn.BatchNorm2d(2 * inp_ch),
+            nn.ReLU(inplace=True),
             nn.Conv2d(
                 2 * inp_ch, 4 * inp_ch, kernel_size=5, stride=5
             ),  # [B*S, 4C, 18, 14]
+            nn.BatchNorm2d(4 * inp_ch),
+            nn.ReLU(inplace=True),
             Rearrange("(b s) c h w -> b s (c h w)", s=seq_len),  # [B, S, 4C*18*14]
             nn.Linear(
                 4 * inp_ch * (height // 30) * (width // 30), dmodel
             ),  # [B, S, 512]
+            nn.ReLU(inplace=True),
         )
 
     def make_upsample(self, oup_ch, oup_len, height, width, dmodel):
         return nn.Sequential(
             nn.Linear(dmodel, 4 * oup_ch * (height // 30) * (width // 30)),
+            nn.ReLU(inplace=True),
             Rearrange("b s (c h w) -> (b s) c h w", c=4 * oup_ch, h=height // 30),
             nn.ConvTranspose2d(4 * oup_ch, 2 * oup_ch, kernel_size=5, stride=5),
+            nn.ReLU(inplace=True),
             nn.ConvTranspose2d(2 * oup_ch, 1, kernel_size=6, stride=6),
+            nn.ReLU(inplace=True),
             Rearrange("(b s) c h w -> b (s c) h w", s=oup_len),
         )
 
@@ -110,6 +118,7 @@ class TransformerBuilder(BaseBuilder):
             postprocess=self.postprocess_layers,
             loss_fn=self._loss_fn,
             **self._model_config,
+            **self._data_info,
         )
 
     def handle_model_config(self, model_config):

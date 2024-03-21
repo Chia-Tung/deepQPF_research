@@ -6,7 +6,7 @@ from src.utils.time_util import TimeUtil
 
 ### Blacklist for datetime
 three_days = TimeUtil.three_days
-BLACKLIST_PATH = "/home/dong1128/deepQPF_research/exp_config/black_list.txt"
+BLACKLIST_PATH = "./exp_config/black_list.txt"
 GREYLIST = (
     three_days(2018, 5, 7)
     + three_days(2018, 5, 8)
