@@ -60,7 +60,10 @@ class RainLoaderJay(RainLoaderNc):
         target_shape: tuple[int],
     ) -> np.ndarray:
         array_data = self.load_data_from_datetime(
-            [target_time - timedelta(minutes=self.GRANULARITY * 5), target_time]
+            [
+                target_time - timedelta(minutes=self.GRANULARITY * (ilen - 1)),
+                target_time,
+            ]
         )
         # handle negative value
         array_data[array_data < 0] = 0

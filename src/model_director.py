@@ -1,4 +1,5 @@
-from src.model_architectures import BalancedGRUAdvPoniBuilder
+from src.model_architectures import BalancedGRUAdvPoniBuilder, TransformerBuilder
+from src.model_architectures.builders.base_builder import BaseBuilder
 from src.model_architectures.model_type import ModelType
 
 
@@ -12,7 +13,7 @@ class ModelDirector:
         self._model_type = ModelType(self._model_config["name"])
 
         # from late init
-        self.model_builder = None
+        self.model_builder: BaseBuilder = None
         self._setup()
 
     def _setup(self):
@@ -28,6 +29,13 @@ class ModelDirector:
                 )
             case ModelType.CAPN_PONI_PERSIST:
                 pass
+            case ModelType.TRANSFORMER:
+                self.model_builder = TransformerBuilder(
+                    self._model_config,
+                    self._loss_config,
+                    self._data_info,
+                    self._checkpoint_dir,
+                )
             case _:
                 print(f"{self._model_type} not supported")
 

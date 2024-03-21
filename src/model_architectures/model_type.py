@@ -9,3 +9,4 @@ class ModelType(StrEnum):
     CAPN = "BalancedGRUAdv"
     CAPN_PONI = "BalancedGRUAdvPONI"
     CAPN_PONI_PERSIST = "BalancedGRUAdvPONIAtten"
+    TRANSFORMER = "Transformer"
