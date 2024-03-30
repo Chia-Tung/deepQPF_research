@@ -7,3 +7,4 @@ p-tqdm
 geopandas
 einops
 transformers
+onnx

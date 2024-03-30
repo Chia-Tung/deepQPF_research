@@ -12,7 +12,7 @@ from src.data_manager import DataManager
 from src.model_director import ModelDirector
 
 
-def main():
+def main(export_onnx=False):
     dm = DataManager(
         data_meta_info=config["train_config"]["data_meta_info"],
         **config["train_config"]["data_loader_params"],
@@ -47,6 +47,28 @@ def main():
         ],
     )
     trainer.fit(model, dm)
+
+    ##### export onnx #####
+    if export_onnx:
+        train_data, train_label = next(iter(dm.train_dataloader()))
+        train_data["rain"] = train_data["rain"].cuda()
+        # print(train_data["rain"].shape)
+        export_onnx_model(model, train_data)
+
+
+def export_onnx_model(model, input_data):
+    model.eval()
+    model = model.cuda()
+    torch.onnx.export(
+        model,
+        {"x": input_data},
+        "./export/model.onnx",
+        export_params=True,
+        verbose=False,
+        input_names=["input"],
+        output_names=["output"],
+        dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}},
+    )
 
 
 if __name__ == "__main__":

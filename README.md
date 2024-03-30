@@ -69,8 +69,8 @@ tensorboard --logdir ./logs/ --port 5000 --bind_all --load_fast=false
 1. Choose certain model builder
 2. Prepare all elements the model needs and `build_model()`
 
-|Model Name|Total Params|Gird Size|Min Valid Loss|
-|:----:|:----:|:----:|:----:|
-|ConvGRU|8.7M|(540, 420)||
-|Vanilla Transformer|46.2M|(540, 420)||
-|ViT|87M|(540, 420)||
+|Model Name|Total Params|Gird Size|
+|:----:|:----:|:----:|
+|ConvGRU|8.7M|(540, 420)|
+|Vanilla Transformer|46.2M|(540, 420)|
+|ViT|87M|(540, 420)|
