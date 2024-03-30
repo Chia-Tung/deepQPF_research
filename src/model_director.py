@@ -1,4 +1,4 @@
-from src.model_architectures import BalancedGRUAdvPoniBuilder, TransformerBuilder
+import src.model_architectures as ma
 from src.model_architectures.builders.base_builder import BaseBuilder
 from src.model_architectures.model_type import ModelType
 
@@ -21,16 +21,21 @@ class ModelDirector:
             case ModelType.CAPN:
                 pass
             case ModelType.CAPN_PONI:
-                self.model_builder = BalancedGRUAdvPoniBuilder(
+                self.model_builder = ma.BalancedGRUAdvPoniBuilder(
                     self._model_config,
                     self._loss_config,
                     self._data_info,
                     self._checkpoint_dir,
                 )
-            case ModelType.CAPN_PONI_PERSIST:
-                pass
             case ModelType.TRANSFORMER:
-                self.model_builder = TransformerBuilder(
+                self.model_builder = ma.TransformerBuilder(
+                    self._model_config,
+                    self._loss_config,
+                    self._data_info,
+                    self._checkpoint_dir,
+                )
+            case ModelType.ViT:
+                self.model_builder = ma.VitBuilder(
                     self._model_config,
                     self._loss_config,
                     self._data_info,

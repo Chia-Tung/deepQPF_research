@@ -29,7 +29,7 @@ def main():
 
     checkpoint_callback = model.get_checkpoint_callback()
     trainer = Trainer(
-        num_sanity_val_steps=1,
+        num_sanity_val_steps=2,
         benchmark=True,
         fast_dev_run=False,  # use n batch(es) to fast run through train/valid
         logger=logger,

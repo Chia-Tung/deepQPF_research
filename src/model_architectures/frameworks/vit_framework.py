@@ -1,61 +1,55 @@
-from typing import Any
-
-import numpy as np
 import pytorch_lightning.loggers as pl_loggers
 import torch
 from einops import rearrange
 from pytorch_lightning import LightningModule
 from pytorch_lightning.callbacks import ModelCheckpoint
-from torch import nn
 from torch.optim.lr_scheduler import LambdaLR
 
 from src.const import CONFIG
 from visualization.plot_tb_viz import gen_plot
 
 
-class TransformerFramework(LightningModule):
-    def __init__(self, *, checkpoint_directory, **kwargs: Any) -> None:
+class VitFramework(LightningModule):
+    def __init__(
+        self,
+        *,
+        checkpoint_dir,
+        **kwargs,
+    ) -> None:
         super().__init__()
         self.save_hyperparameters(
-            ignore=["preprocess", "tf_encoder", "tf_decoder", "postprocess", "loss_fn"]
+            ignore=["img_processor", "vit_model", "postprocess", "loss_fn"]
         )
         # model
-        self.preprocess = kwargs["preprocess"]
-        self.transformer = nn.Transformer(
-            d_model=kwargs["d_model"],
-            nhead=kwargs["n_head"],
-            custom_encoder=kwargs["tf_encoder"],
-            custom_decoder=kwargs["tf_decoder"],
-            batch_first=True,
-        )
+        self.img_processor = kwargs["img_processor"]
+        self.vit_model = kwargs["vit_model"]
         self.postprocess = kwargs["postprocess"]
         self.loss_fn = kwargs["loss_fn"]
-        # save checkpoint
-        self._ckp_dir = checkpoint_directory
+        # checkpoint
+        self._ckp_dir = checkpoint_dir
 
-    def forward(
-        self, input_data: dict[str, np.ndarray], label: dict[str, np.ndarray]
-    ) -> torch.Tensor:
+    def forward(self, x):
         """
-        Function: TransformerFramework.forward
+        Function: VitFramework.forward
         Args:
-            input_data (dict[str, np.ndarray]): input data, keys are `radar` and `rain`
+            x (dict[str, torch.Tensor]): input dict, keys are `radar` and `rain`
                 and the array for each parameter is the shape of [B, S, C, H, W]
-            label (dict[str, np.ndarray]): label, keys are `rain` and the array for each
-                parameter is the shape of [B, C, H, W]
-        Returns:
-            torch.Tensor: output of the network
         """
-        input_data = torch.concat(list(input_data.values()), dim=2)  # [B, 6, 2, H, W]
-        label = rearrange(
-            label["rain"], "b (s c) h w -> b s c h w", c=1
-        )  # [B, 3, 1, H, W]
-        prep_inp = self.preprocess["prep_src"](input_data)  # [B, 6, 512]
-        prep_oup = self.preprocess["prep_tgt"](label)  # [B, 3, 512]
-        tgt_mask = nn.Transformer.generate_square_subsequent_mask(prep_oup.size(-2))
-        attn_data = self.transformer(prep_inp, prep_oup, tgt_mask=tgt_mask)
-        oup = self.postprocess(attn_data)  # [B, 3, H, W]
-        return oup
+        inp = torch.concat([i for i in x.values()], dim=2)  # [B, S, C, H, W]
+        inp = rearrange(inp, "b s c h w -> b (c s) h w")  # [B, S, H, W]
+        inp = self.img_processor(inp)  # [B, S, 224, 224]
+        oup = self.vit_model(inp)["last_hidden_state"]  # [B, 197, 768]
+        patch_oup = oup[:, 1:]  # [B, 196, 768]
+        ret = self.postprocess(patch_oup)  # [B, 1, 540, 420]
+        return ret
+
+    def common_step(self, batch, batch_idx):
+        inp_data, label = batch
+        label = label["rain"]
+
+        model_oup = self(inp_data)
+        loss = self.loss_fn(model_oup, label)
+        return loss, model_oup
 
     def configure_optimizers(self):
         """
@@ -82,56 +76,27 @@ class TransformerFramework(LightningModule):
         }
         return {"optimizer": optimizer, "lr_scheduler": lr_scheduler_config}
 
-    def on_train_epoch_start(self) -> None:
-        super().on_train_epoch_start()
-        # This function doesn't work currently. Same error message as
-        # https://github.com/pytorch/pytorch/issues/23993
-        # if self.global_rank == 0 and self.current_epoch == 0:
-        #     self.log_tb_graph()
-        return
-
     def training_step(self, batch, batch_idx):
-        inp_data, label = batch
-        outputs = self(inp_data, label)
-        loss = self.loss_fn(outputs, label["rain"])
-
+        loss, _ = self.common_step(batch, batch_idx)
         self.log("train_loss", loss, on_step=True, prog_bar=True)
         return loss
 
-    def on_validation_epoch_start(self) -> None:
-        super().on_validation_epoch_start()
-        self.val_output_list = []
-        return
-
     def validation_step(self, batch, batch_idx, dataloader_idx=0):
-        inp_data, label = batch
-        outputs = self(inp_data, label)
-        label = label["rain"]
-        loss = self.loss_fn(outputs, label)
-
+        loss, pred = self.common_step(batch, batch_idx)
         self.log(
             "val_loss", loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True
         )
 
-        # self.val_output_list.append(loss.cpu())
-
         # log images on main GPU
         if batch_idx in range(1, 11, 2) and self.global_rank == 0:
-            self.log_tb_images(inp_data, label, outputs, bid=batch_idx, max_img_num=3)
-
-    # No need any more since `self.log(..., on_epoch=True)` automatically accumulates
-    # variables using mean-reduction. The key name is the variable name with suffix
-    # `_epoch`
-    # def on_validation_epoch_end(self):
-    #     total_loss = np.mean(self.val_output_list)
-    #     self.log(
-    #         "total_val_loss", total_loss, on_epoch=True, prog_bar=True, sync_dist=True
-    #     )
+            self.log_tb_images(
+                batch[0], batch[1]["rain"], pred, bid=batch_idx, max_img_num=3
+            )
 
     def get_checkpoint_callback(self):
         return ModelCheckpoint(
             dirpath=self._ckp_dir,
-            filename="Transformer-{epoch:02d}-{val_loss_epoch:.6f}",
+            filename="ViT-{epoch:02d}-{val_loss_epoch:.6f}",
             save_top_k=1,
             verbose=True,
             monitor="val_loss_epoch",
@@ -195,7 +160,7 @@ class TransformerFramework(LightningModule):
                 # input
                 tb_logger.add_figure(
                     f"case_batch{bid}_{img_idx}/input_data",
-                    gen_plot(concat_input[img_idx]),
+                    gen_plot(concat_input[img_idx].squeeze()),
                     global_step=0,
                 )
                 # ground truth
@@ -210,29 +175,3 @@ class TransformerFramework(LightningModule):
                 gen_plot(pred[img_idx]),
                 global_step=self.global_step,
             )
-
-    def log_tb_graph(self):
-        tb_logger = self.get_tb_logger()
-        prototype_inp = {}
-        for k, v in self.hparams.channel.items():
-            prototype_inp[k] = torch.Tensor(
-                self.hparams.batch_size,
-                self.hparams.ilen,
-                v,
-                self.hparams.shape[0],
-                self.hparams.shape[1],
-            ).cuda()
-
-        prototype_oup = dict(
-            rain=torch.Tensor(
-                self.hparams.batch_size,
-                self.hparams.olen,
-                self.hparams.shape[0],
-                self.hparams.shape[1],
-            )
-        ).cuda()
-
-        # this funcation will call self.forward
-        tb_logger.add_graph(
-            self, [prototype_inp, prototype_oup], verbose=False, use_strict_trace=False
-        )

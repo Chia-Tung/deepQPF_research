@@ -46,31 +46,58 @@ class TransformerBuilder(BaseBuilder):
         num_head = self._model_config["n_head"]
         num_layers = self._model_config["n_layers"]
 
-        # preprocess
+        self.prepare_preprocess(
+            inp_len, inp_ch, H, W, dim_model, oup_len
+        ).prepare_transformer_encoder(
+            dim_model, num_head, num_layers
+        ).prepare_transformer_decoder(
+            dim_model, num_head, num_layers
+        ).prepare_postprocess(
+            dim_model, oup_len, H, W
+        ).prepare_loss_fn(
+            self._loss_type
+        )
+
+    def prepare_preprocess(
+        self, inp_len, inp_ch, H, W, dim_model, oup_len
+    ) -> TransformerBuilder:
+        """
+        convert input mdoel shape from (B, S, C, H, W) to (B, S, 4C, H//30, W//30)
+        , then to (B, S, 512)
+        """
         self.preprocess_layers = nn.ModuleDict(
             {
                 "prep_src": self.make_downsample(inp_len, inp_ch, H, W, dim_model),
                 "prep_tgt": self.make_downsample(oup_len, 1, H, W, dim_model),
             }
         )
+        return self
 
-        # encoder
+    def prepare_transformer_encoder(
+        self, dim_model, num_head, num_layers
+    ) -> TransformerBuilder:
         encode_layer = TransformerEncoderLayer(
             dim_model, num_head, batch_first=True, activation=nn.functional.gelu
         )
         self.encoder = TransformerEncoder(encode_layer, num_layers)
+        return self
 
-        # decoder
+    def prepare_transformer_decoder(
+        self, dim_model, num_head, num_layers
+    ) -> TransformerBuilder:
         decode_layer = TransformerDecoderLayer(
             dim_model, num_head, batch_first=True, activation=nn.functional.gelu
         )
         self.decoder = TransformerDecoder(decode_layer, num_layers)
+        return self
 
-        # post-process
+    def prepare_postprocess(self, dim_model, oup_len, H, W) -> TransformerBuilder:
+        """
+        convert output from shape (B, S, 512) to (B, S, 4C*H//30*W//30) to
+        (B, S, 4C, H//30, W//30) to (B, S, H, W)
+        """
         self.postprocess_layers = self.make_upsample(1, oup_len, H, W, dim_model)
-
-        # loss function
-        self.prepare_loss_fn(self._loss_type)
+        return self
 
     def prepare_loss_fn(self, loss_type: str) -> TransformerBuilder:
         self._loss_fn = LossType[loss_type].value(self._bal_w, threshold=self._bal_thsh)
@@ -111,18 +138,15 @@ class TransformerBuilder(BaseBuilder):
 
     def build(self) -> LightningModule:
         return self._framework(
-            checkpoint_directory=self._checkpoint_dir,
+            # models
             preprocess=self.preprocess_layers,
             tf_encoder=self.encoder,
             tf_decoder=self.decoder,
             postprocess=self.postprocess_layers,
             loss_fn=self._loss_fn,
+            # checkpoint
+            checkpoint_directory=self._checkpoint_dir,
+            # scalar
             **self._model_config,
             **self._data_info,
         )
-
-    def handle_model_config(self, model_config):
-        for k, v in model_config.items():
-            if k in ["learning_rate", "adam_epsilon"]:
-                model_config[k] = float(v)
-        return model_config

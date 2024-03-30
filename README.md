@@ -1,4 +1,14 @@
+<div align="center">
+
 # DeepQPF Codebase for Research
+
+
+[![Python 3.10](https://img.shields.io/badge/Python-3.10-3776AB)](https://www.python.org/downloads/release/python-310/)
+![PyTorch 2.2.1](https://img.shields.io/badge/Python-2.2.1-purple?logo=PyTorch&link=https%3A%2F%2Fpypi.org%2Fproject%2Ftorch%2F)
+![PyTorch Lightning](https://img.shields.io/badge/PyTorch--lightning-2.0.3-blue?link=https%3A%2F%2Flightning.ai%2Fdocs%2Fpytorch%2F2.0.3%2Flevels%2Fcore_skills.html)
+[![HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging--face-0.21.4-yellow)](https://pypi.org/project/huggingface-hub/)
+</div>
+
 This repository is for research use. All the contents aim to build AI models which can predict the rainfall amount in the next three hours. In current stage, only *rain rate (mm/h)* and *radar reflectivity (dBZ)* are considered as input. 
 
 ![](./visualization/tswp_example.png)
@@ -63,3 +73,4 @@ tensorboard --logdir ./logs/ --port 5000 --bind_all --load_fast=false
 |:----:|:----:|:----:|:----:|
 |ConvGRU|8.7M|(540, 420)||
 |Vanilla Transformer|46.2M|(540, 420)||
+|ViT|87M|(540, 420)||

@@ -93,7 +93,7 @@ class GANFramework(LightningModule):
             label (np.ndarray): Rainfall targets whose array is be the shape
                 of [B, output_len, H, W]
         Return:
-            output: rainfall predictions of shape [Seq, Batch, Height, Width]
+            output: rainfall predictions of shape [Batch, Seq, Height, Width]
         """
         # prepare auxiliary data
         rainfall_previous_hr = torch.mean(input_data["rain"], dim=1, keepdim=False)
@@ -128,10 +128,15 @@ class GANFramework(LightningModule):
         opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=self._lr)
         return opt_g, opt_d
 
-    def training_step(self, batch, batch_idx):
-        if batch_idx == 0 and self.global_step == 0 and self.global_rank == 0:
-            self.log_tb_graph()
+    def on_train_epoch_start(self) -> None:
+        super().on_train_epoch_start()
+        # This function doesn't work currently. Same error message as
+        # https://github.com/pytorch/pytorch/issues/23993
+        # if self.global_rank == 0 and self.current_epoch == 0:
+        #     self.log_tb_graph()
+        return
 
+    def training_step(self, batch, batch_idx):
         # data from torch.data.Dataloader will be automatically turned into tensor in batch
         inp_data, label = batch
         label = label["rain"]
@@ -297,7 +302,7 @@ class GANFramework(LightningModule):
                 id 1 => ground truth, accumulated rainfall.
                     w/ shape of [B, output_len, H, W]
                 id 2 => prediction, model output.
-                    w/ shape of [output_len, B, H, W]
+                    w/ shape of [B, output_len, H, W]
             bid (int): batch index
             max_img_num: how many images to show on Tensorboard
         """
@@ -369,4 +374,6 @@ class GANFramework(LightningModule):
         ).cuda()
 
         # this funcation will call self.forward
-        tb_logger.add_graph(self, [prototype_inp, prototype_oup], verbose=False)
+        tb_logger.add_graph(
+            self, [prototype_inp, prototype_oup], verbose=False, use_strict_trace=False
+        )

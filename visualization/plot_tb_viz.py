@@ -58,8 +58,11 @@ def gen_plot(data: np.ndarray | torch.Tensor):
         rows = 1
 
         fig, ax = plt.subplots(rows, columns, figsize=(6, 2), dpi=200, facecolor="w")
-        for i in range(columns):
-            plot_data(ax[i], data[i])
+        if columns == 1:
+            plot_data(ax, data[0])
+        else:
+            for i in range(columns):
+                plot_data(ax[i], data[i])
 
     elif len(data.shape) == 4:
         rows = data.shape[1]

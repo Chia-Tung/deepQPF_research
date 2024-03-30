@@ -21,7 +21,7 @@ GREYLIST = (
 )
 
 ### Load config
-config_file = "./exp_config/transformer_config_large.yml"
+config_file = "./exp_config/vit_config_large.yml"
 with open(config_file, "r") as content:
     CONFIG = yaml.safe_load(content)
 
